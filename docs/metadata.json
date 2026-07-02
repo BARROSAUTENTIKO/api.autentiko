@@ -1,6 +1,9 @@
 {
   "generated_for": "Codex",
   "project": "AUTENTIKO OK CHECK / Palmer Imóveis - Vistorias",
+  "apps_script_project_id": "1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8",
+  "apps_script_deployment_id": "AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme",
+  "published_version": 45,
   "files": [
     "CHECKLIST_TESTES.md",
     "Code.gs",
@@ -8,14 +11,27 @@
     "Index.html",
     "README.md",
     "REFERENCIA_MODELO_COLADO.html",
+    "Sign.html",
+    "ZZZ_V6_Final.gs",
+    "ZZZ_Z_AUTENTIKO_SIGN.gs",
     "appsscript.json",
-    "modelo.html"
+    "modelo.html",
+    "verificar/index.html"
   ],
   "source_sizes_bytes": {
-    "Code.gs": 85980,
-    "Index.html": 85516,
-    "modelo.html": 13013
+    "Code.gs": 166621,
+    "Index.html": 125566,
+    "Sign.html": 46077,
+    "ZZZ_V6_Final.gs": 56688,
+    "ZZZ_Z_AUTENTIKO_SIGN.gs": 47160,
+    "modelo.html": 43112
   },
   "required_pdf_template_name": "modelo.html",
-  "official_palmer_logo": "https://i.postimg.cc/6QDd7672/LOGO-MARCA.png"
+  "official_palmer_logo": "https://i.postimg.cc/6QDd7672/LOGO-MARCA.png",
+  "camera_liveness": {
+    "version": 45,
+    "face_detector": "MediaPipe Tasks Vision 0.10.35 with native FaceDetector fallback",
+    "local_heuristic_approves_face": false,
+    "requires_explicit_consents": true
+  }
 }
