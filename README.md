@@ -18,7 +18,7 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `42`
+- Versao publicada: `43`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -30,6 +30,13 @@ Arquivos principais:
 - `apps-script/Sign.html`
 - `apps-script/modelo.html`
 - `apps-script/appsscript.json`
+
+## Revisao de seguranca @43
+
+- Token e link de assinatura nao sao mais exibidos no painel administrativo apos criar convite.
+- Token continua sendo enviado apenas ao e-mail do signatario.
+- Tentativas incorretas de OTP passam a ser auditadas e bloqueadas no limite tecnico.
+- O fonte nao publica mais o hash literal da chave padrao.
 
 ## Verificacao publica
 
