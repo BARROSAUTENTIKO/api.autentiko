@@ -54,3 +54,13 @@
 - Testar movimentos insuficientes: vídeo não deve ser enviado.
 - Testar fluxo aprovado: foto e vídeo devem ir para Drive restrito, com hash na planilha.
 - Concluir assinatura e verificar selo no PDF, manifesto e QR Code.
+
+## 8. Rascunhos e edição documental
+- Iniciar nova vistoria e clicar em `Salvar rascunho` antes de preencher tudo.
+- Confirmar que o painel mostra status `RASCUNHO`.
+- Confirmar que rascunho não permite emitir PDF nem criar assinatura.
+- Reabrir rascunho pelo botão `Continuar rascunho`, editar e salvar novamente.
+- Finalizar/trancar o rascunho e confirmar status `REGISTRADO`.
+- Editar um laudo registrado e salvar como rascunho; o laudo original não deve ser substituído.
+- Finalizar esse rascunho de revisão e confirmar novo ID/hash e auditoria.
+- Emitir PDF final e conferir quadro executivo, partes, imóvel, ambientes, fotos e assinaturas.

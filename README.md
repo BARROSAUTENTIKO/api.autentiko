@@ -18,8 +18,8 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `45`
-- Deployment: `AUTENTIKO Sign V1 camera liveness rigorosa 2026-07-02`
+- Versao publicada: `46`
+- Deployment: `AUTENTIKO rascunhos e modelo relatorio tecnico 2026-07-02`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -40,6 +40,15 @@ Arquivos principais:
 - Cada etapa de movimento confirma novamente luz e rosto detectado.
 - O backend rejeita video/conclusao sem liveness aprovado, detector facial forte, tres fases de movimento e consentimentos completos.
 - O manifesto e o selo do PDF registram risco tecnico sem publicar video, IP completo ou evidencias sensiveis.
+
+## Revisao de rascunhos/modelo @46
+
+- Assistente de vistoria ganhou botao `Salvar rascunho`.
+- Rascunhos podem ser reabertos e editados sem emitir PDF nem assinatura.
+- Editar laudo registrado e salvar rascunho cria uma copia editavel, sem substituir o laudo original.
+- Finalizar rascunho transforma o registro em laudo trancado/auditavel.
+- Emissao de PDF e assinatura eletronica ficam bloqueadas enquanto o status for `RASCUNHO`.
+- O modelo do laudo passou a abrir com quadro executivo, blocos de controle documental, partes, vistoria e imovel.
 
 ## Revisao de seguranca @43
 
