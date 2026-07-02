@@ -6,8 +6,8 @@ Esta pasta guarda a versao publicada do sistema administrativo AUTENTIKO-OK CHEC
 
 - Apps Script project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
 - Web app principal: https://script.google.com/macros/s/AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme/exec
-- Versao publicada do Apps Script: `43`
-- Descricao da publicacao: `AUTENTIKO Sign V1 revisao seguranca tokens 2026-07-02`
+- Versao publicada do Apps Script: `44`
+- Descricao da publicacao: `AUTENTIKO Sign V1 revisao camera liveness 2026-07-02`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 ## Arquivos principais
@@ -18,6 +18,15 @@ Esta pasta guarda a versao publicada do sistema administrativo AUTENTIKO-OK CHEC
 - `Index.html`: painel administrativo, incluindo aba Assinaturas.
 - `Sign.html`: fluxo publico de assinatura por link/token.
 - `modelo.html`: modelo de laudo/PDF com selo de assinatura e QR/manifesto.
+
+## Revisao de camera/liveness @44
+
+- O signatario precisa marcar consentimentos separados antes de qualquer coleta sensivel.
+- Camera/microfone so sao solicitados apos consentimento expresso.
+- A tela executa analise local de luz, rosto e movimento antes de gravar.
+- Quando o navegador suporta `FaceDetector`, ele e usado; quando nao suporta, o metodo fica registrado como heuristica local.
+- O backend rejeita `VIDEO_ROSTO` e conclusao da assinatura sem liveness aprovado e consentimentos completos.
+- O selo do PDF exibe resumo de risco tecnico sem publicar evidencias sensiveis.
 
 ## Revisao de seguranca @43
 
