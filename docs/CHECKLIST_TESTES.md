@@ -64,3 +64,10 @@
 - Editar um laudo registrado e salvar como rascunho; o laudo original não deve ser substituído.
 - Finalizar esse rascunho de revisão e confirmar novo ID/hash e auditoria.
 - Emitir PDF final e conferir quadro executivo, partes, imóvel, ambientes, fotos e assinaturas.
+
+## 9. Fotos em rascunhos e revisões
+- Abrir um laudo registrado com foto e remover uma imagem antes de salvar rascunho.
+- Confirmar que o laudo registrado original ainda mantém a foto na aba `FOTOS_LAUDO`.
+- Confirmar que o rascunho/revisão não mostra a foto removida na prévia nem no PDF final.
+- Remover uma foto recém enviada antes de salvar e confirmar que o arquivo temporário é enviado para exclusão no Drive.
+- Conferir `AUDITORIA` com ação de salvamento contendo `fotosRemovidas`.

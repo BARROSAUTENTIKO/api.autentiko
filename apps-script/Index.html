@@ -478,6 +478,7 @@ input[type="number"]::placeholder,
     var editandoPayloadOriginal = null;
     var editandoStatusLaudo = '';
     var payloadPendenteEdicaoDinamica = null;
+    var fotosRemovidasEdicao = [];
     var usuarioAtual = null;
 
     // --- UTILIDADE: SANITIZAR TEXTO PARA innerHTML ---
@@ -829,6 +830,7 @@ input[type="number"]::placeholder,
 
       fotosServidor.forEach(function(foto) {
         foto = limparFotoParaPayload(foto || {});
+        foto.origemServidor = true;
         var codigo = foto.ambienteCodigo || ambienteCodigoPorNome(foto.ambiente) || '';
         if (!codigo) return;
         if (!grupos[codigo]) grupos[codigo] = [];
@@ -1300,8 +1302,25 @@ input[type="number"]::placeholder,
         hash: item.hash || '',
         arquivoId: item.arquivoId || item.fileId || '',
         nome: item.nome || item.nomeArquivo || '',
-        mimeType: item.mimeType || 'image/jpeg'
+        mimeType: item.mimeType || 'image/jpeg',
+        origemServidor: !!item.origemServidor,
+        uploadTemporario: !!item.uploadTemporario
       };
+    }
+
+    function registrarFotoRemovidaEdicao(foto) {
+      if (!foto) return;
+      var limpa = limparFotoParaPayload(foto);
+      var chave = limpa.fotoId || limpa.id || limpa.hash || limpa.arquivoId || limpa.url;
+      if (!chave) return;
+      var existe = fotosRemovidasEdicao.some(function(item) {
+        return (item.fotoId && item.fotoId === limpa.fotoId) ||
+          (item.id && item.id === limpa.id) ||
+          (item.hash && item.hash === limpa.hash) ||
+          (item.arquivoId && item.arquivoId === limpa.arquivoId) ||
+          (item.url && item.url === limpa.url);
+      });
+      if (!existe) fotosRemovidasEdicao.push(limpa);
     }
 
     function removerFotoAmbiente(idPrefix, imgId) {
@@ -1318,8 +1337,11 @@ input[type="number"]::placeholder,
       if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
       atualizarObrigatoriedadeFoto(idPrefix);
       mostrarToast('Foto removida da etapa.', 'var(--warning)');
-      if (removida && (removida.fotoId || removida.arquivoId || removida.url)) {
-        google.script.run.withFailureHandler(function(){}).excluirImagemVistoria(removida.fotoId || removida.arquivoId || removida.url);
+      registrarFotoRemovidaEdicao(removida);
+      if (removida && !removida.origemServidor && removida.arquivoId) {
+        google.script.run
+          .withFailureHandler(function(){})
+          .excluirImagemVistoria('', removida.arquivoId, removida.hash || '', removida.url || '');
       }
     }
 
@@ -1521,6 +1543,9 @@ input[type="number"]::placeholder,
         laudoMap.__modoEdicao = 'SIM';
         laudoMap.__idLaudoEdicao = editandoLaudoId;
       }
+      if (fotosRemovidasEdicao.length) {
+        laudoMap.__fotosRemovidas = JSON.stringify(fotosRemovidasEdicao.map(limparFotoParaPayload));
+      }
       return laudoMap;
     }
 
@@ -1632,6 +1657,7 @@ input[type="number"]::placeholder,
       editandoPayloadOriginal = null;
       editandoStatusLaudo = '';
       payloadPendenteEdicaoDinamica = null;
+      fotosRemovidasEdicao = [];
       var banner = document.getElementById('edit-banner-laudo');
       if (banner) banner.classList.remove('show');
 
@@ -1842,7 +1868,9 @@ input[type="number"]::placeholder,
         mimeType: item.mimeType || 'image/jpeg',
         largura: item.largura || item.width || '',
         altura: item.altura || item.height || '',
-        tamanhoBytes: item.tamanhoBytes || item.bytes || ''
+        tamanhoBytes: item.tamanhoBytes || item.bytes || '',
+        origemServidor: !!item.origemServidor,
+        uploadTemporario: !!item.uploadTemporario
       };
     }
 
@@ -1966,7 +1994,9 @@ input[type="number"]::placeholder,
               mimeType: res.mimeType || 'image/jpeg',
               largura: pacote.largura,
               altura: pacote.altura,
-              tamanhoBytes: res.tamanhoBytes || pacote.tamanhoBytes
+              tamanhoBytes: res.tamanhoBytes || pacote.tamanhoBytes,
+              origemServidor: false,
+              uploadTemporario: true
             };
             urlsAtuais.push(fotoObj);
             hiddenUrls.value = JSON.stringify(urlsAtuais.map(limparFotoParaPayload));

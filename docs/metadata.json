@@ -3,7 +3,7 @@
   "project": "AUTENTIKO OK CHECK / Palmer Imóveis - Vistorias",
   "apps_script_project_id": "1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8",
   "apps_script_deployment_id": "AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme",
-  "published_version": 46,
+  "published_version": 47,
   "files": [
     "CHECKLIST_TESTES.md",
     "Code.gs",
@@ -35,10 +35,12 @@
     "requires_explicit_consents": true
   },
   "drafts": {
-    "version": 46,
+    "version": 47,
     "status": "RASCUNHO",
     "allows_editable_drafts": true,
     "blocks_pdf_and_signature_until_final": true,
-    "registered_edit_creates_draft_copy": true
+    "registered_edit_creates_draft_copy": true,
+    "audited_photo_removal": true,
+    "preserves_original_photo_evidence_on_registered_edit": true
   }
 }

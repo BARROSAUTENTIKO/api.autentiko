@@ -18,8 +18,8 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `46`
-- Deployment: `AUTENTIKO rascunhos e modelo relatorio tecnico 2026-07-02`
+- Versao publicada: `47`
+- Deployment: `AUTENTIKO auditoria de fotos e rascunhos 2026-07-02`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -49,6 +49,14 @@ Arquivos principais:
 - Finalizar rascunho transforma o registro em laudo trancado/auditavel.
 - Emissao de PDF e assinatura eletronica ficam bloqueadas enquanto o status for `RASCUNHO`.
 - O modelo do laudo passou a abrir com quadro executivo, blocos de controle documental, partes, vistoria e imovel.
+
+## Revisao de fotos/edicao @47
+
+- Remover foto durante edicao nao apaga a evidencia do laudo registrado original.
+- Fotos removidas ficam marcadas no payload de salvamento e sao aplicadas apenas ao rascunho/revisao correta.
+- O backend ignora a lista tecnica de fotos removidas ao extrair fotos para evitar imagem fantasma no PDF.
+- Exclusao de upload temporario no Drive registra auditoria.
+- Auditoria de salvar rascunho, finalizar rascunho e criar revisao inclui quantidade de fotos removidas.
 
 ## Revisao de seguranca @43
 

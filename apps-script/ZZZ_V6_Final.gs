@@ -3,7 +3,7 @@
    Performance, cache, upload compacto e laudo documental.
    ========================================================= */
 
-var AUTENTIKO_PATCH_VERSION_V6 = 'V9_LOGO_INLINE_BASE64_PDF_10X12_20260629';
+var AUTENTIKO_PATCH_VERSION_V6 = 'V10_RASCUNHO_FOTOS_AUDITADAS_20260702';
 var AUT_MODELO_PDF_VERSION_V6 = 'MODELO_PALMER_RELATORIO_TECNICO_RASCUNHO_20260702';
 var PALMER_LAUDO_LOGO_OFICIAL = 'https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png?sha=665353158D30C2184BF1061A92EFD6D7F3492226D31A76FA46E01CC2620ED47A';
 var PALMER_MARCADAGUA_OFICIAL = PALMER_LAUDO_LOGO_OFICIAL;
@@ -276,6 +276,7 @@ function AUT_EXTRAIR_FOTOS_PAYLOAD_(dados) {
   }
 
   function andar(valor, caminho) {
+    if (/__fotosRemovidas|__fotos_removidas|fotosRemovidasEdicao/i.test(String(caminho || ''))) return;
     if (!valor) return;
     if (typeof valor === 'string') {
       var s = valor.trim();
@@ -324,6 +325,7 @@ function AUT_EXTRAIR_FOTOS_PAYLOAD_(dados) {
         }
       }
       Object.keys(valor).forEach(function(k) {
+        if (/^__fotosRemovidas$|^__fotos_removidas$/i.test(String(k))) return;
         andar(valor[k], caminho ? caminho + '.' + k : k);
       });
     }
@@ -834,6 +836,7 @@ function AUT_RENDER_MANIFESTO_V7_(params) {
 function AUT_PURGE_PAYLOAD_(dados) {
   function limpar(valor, chave) {
     var nk = AUT_NORM_(chave || '');
+    if (nk === '__FOTOSREMOVIDAS' || nk === '__FOTOS_REMOVIDAS') return '';
     if (nk === 'DATAURL' || nk === 'DATA_URL' || nk === 'BASE64' || nk === 'EMBED' || nk === 'FOTO_DATA_URL') return '';
     if (valor === null || valor === undefined) return valor;
     if (typeof valor === 'string') {
@@ -856,6 +859,152 @@ function AUT_PURGE_PAYLOAD_(dados) {
     return valor;
   }
   return limpar(dados || {}, '');
+}
+
+function AUT_FOTOS_REMOVIDAS_PAYLOAD_V7_(dados) {
+  dados = dados || {};
+  var raw = dados.__fotosRemovidas || dados.__fotos_removidas || '';
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw); } catch (eJson) { raw = raw ? [{ url: raw }] : []; }
+  }
+  if (!Array.isArray(raw)) raw = [raw];
+  return raw.map(function(item) {
+    if (typeof item === 'string') item = { url: item };
+    item = item || {};
+    var url = item.url || item.driveUrl || item.directViewUrl || '';
+    var arquivoId = item.arquivoId || item.fileId || item.ARQUIVO_ID || extractDriveId_(url) || '';
+    return {
+      id: item.id || item.fotoId || item.ID_FOTO || '',
+      fotoId: item.fotoId || item.id || item.ID_FOTO || '',
+      hash: item.hash || item.HASH_FOTO || '',
+      arquivoId: arquivoId,
+      url: url,
+      ambiente: item.ambiente || '',
+      origemServidor: item.origemServidor ? 'SIM' : ''
+    };
+  }).filter(function(item) {
+    return item.id || item.fotoId || item.hash || item.arquivoId || item.url;
+  });
+}
+
+function AUT_REMOVER_CONTROLES_EDICAO_V7_(dados) {
+  var out = {};
+  dados = dados || {};
+  Object.keys(dados).forEach(function(k) {
+    if (/^__fotosRemovidas$|^__fotos_removidas$/i.test(String(k))) return;
+    out[k] = dados[k];
+  });
+  return out;
+}
+
+function AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, idLaudo, numeroLaudo, dados) {
+  var removidas = AUT_FOTOS_REMOVIDAS_PAYLOAD_V7_(dados || {});
+  if (!removidas.length) return 0;
+  var sh = ss.getSheetByName('FOTOS_LAUDO');
+  if (!sh || sh.getLastRow() < 2) return 0;
+
+  var ids = {};
+  var hashes = {};
+  var arquivos = {};
+  var urls = {};
+  removidas.forEach(function(f) {
+    if (f.id) ids[String(f.id)] = true;
+    if (f.fotoId) ids[String(f.fotoId)] = true;
+    if (f.hash) hashes[String(f.hash)] = true;
+    if (f.arquivoId) arquivos[String(f.arquivoId)] = true;
+    if (f.url) {
+      urls[String(f.url)] = true;
+      var idUrl = extractDriveId_(f.url);
+      if (idUrl) arquivos[String(idUrl)] = true;
+    }
+  });
+
+  var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+  var headers = values[0];
+  var removidasRows = 0;
+  for (var r = values.length - 1; r >= 1; r--) {
+    var obj = AUT_ROW_TO_OBJ_(headers, values[r]);
+    var rowIdLaudo = AUT_GET_(obj, ['ID_LAUDO']);
+    var rowNumero = AUT_GET_(obj, ['NUMERO_LAUDO']);
+    var pertenceAoDestino = String(rowIdLaudo) === String(idLaudo) || String(rowNumero) === String(numeroLaudo);
+    if (!pertenceAoDestino) continue;
+
+    var fotoId = AUT_GET_(obj, ['ID_FOTO']);
+    var hash = AUT_GET_(obj, ['HASH_FOTO']);
+    var url = AUT_GET_(obj, ['FOTO_URL', 'URL']);
+    var arquivoId = AUT_GET_(obj, ['ARQUIVO_ID']) || extractDriveId_(url);
+    var bateu = (fotoId && ids[String(fotoId)]) ||
+      (hash && hashes[String(hash)]) ||
+      (arquivoId && arquivos[String(arquivoId)]) ||
+      (url && urls[String(url)]);
+    if (!bateu) continue;
+    sh.deleteRow(r + 1);
+    removidasRows++;
+  }
+  return removidasRows;
+}
+
+function excluirImagemVistoria(fotoId, arquivoId, hashFoto, urlFoto) {
+  try {
+    garantirEstruturaDoSistema();
+    var ss = AUT_SS_FAST_();
+    fotoId = String(fotoId || '').trim();
+    arquivoId = String(arquivoId || '').trim();
+    hashFoto = String(hashFoto || '').trim();
+    urlFoto = String(urlFoto || '').trim();
+
+    if (!urlFoto && /^https?:\/\//i.test(fotoId)) {
+      urlFoto = fotoId;
+      fotoId = '';
+    }
+    if (!arquivoId && urlFoto) arquivoId = extractDriveId_(urlFoto) || '';
+    if (!arquivoId && /^[A-Za-z0-9_-]{20,}$/.test(fotoId) && fotoId.indexOf('FOTO_') !== 0) {
+      arquivoId = fotoId;
+      fotoId = '';
+    }
+
+    var arquivoRemovido = false;
+    if (arquivoId) {
+      try {
+        DriveApp.getFileById(arquivoId).setTrashed(true);
+        arquivoRemovido = true;
+      } catch (eDrive) {}
+    }
+
+    var removidas = 0;
+    var sh = ss.getSheetByName('FOTOS_LAUDO');
+    if (sh && sh.getLastRow() >= 2 && (fotoId || arquivoId || hashFoto || urlFoto)) {
+      var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+      var headers = values[0];
+      for (var r = values.length - 1; r >= 1; r--) {
+        var obj = AUT_ROW_TO_OBJ_(headers, values[r]);
+        var rowUrl = AUT_GET_(obj, ['FOTO_URL', 'URL']);
+        var rowArquivoId = AUT_GET_(obj, ['ARQUIVO_ID']) || extractDriveId_(rowUrl);
+        var bateu = (fotoId && String(AUT_GET_(obj, ['ID_FOTO'])) === String(fotoId)) ||
+          (hashFoto && String(AUT_GET_(obj, ['HASH_FOTO'])) === String(hashFoto)) ||
+          (arquivoId && String(rowArquivoId) === String(arquivoId)) ||
+          (urlFoto && String(rowUrl) === String(urlFoto));
+        if (bateu) {
+          sh.deleteRow(r + 1);
+          removidas++;
+        }
+      }
+    }
+
+    AUT_APPEND_AUDITORIA_V7_(ss, 'EXCLUIR_FOTO_VISTORIA', fotoId || arquivoId || hashFoto || urlFoto, {
+      fotoId: fotoId,
+      arquivoId: arquivoId,
+      hashFoto: hashFoto,
+      urlInformada: urlFoto,
+      linhasRemovidas: removidas,
+      arquivoRemovidoDrive: arquivoRemovido
+    }, '', '');
+    AUT_INVALIDAR_CACHES_();
+    return { sucesso: true, msg: 'Imagem removida com trilha de auditoria.', removidas: removidas, arquivoRemovido: arquivoRemovido };
+  } catch (e) {
+    return { sucesso: false, msg: 'Erro ao excluir imagem: ' + e.message };
+  }
 }
 
 function AUT_EXTRAIR_LINKS_VIDEO_V7_(dados) {
@@ -1083,7 +1232,7 @@ function apiSalvarVistoria(dados) {
 
     var ss = AUT_SS_FAST_();
     var dadosOriginais = dados || {};
-    var dadosLimpos = AUT_PURGE_PAYLOAD_(dadosOriginais);
+    var dadosLimpos = AUT_REMOVER_CONTROLES_EDICAO_V7_(AUT_PURGE_PAYLOAD_(dadosOriginais));
     var registro = AUT_MONTAR_REGISTRO_LAUDO_(dadosLimpos);
     registro.REVISAO_STATUS = 'VIGENTE';
     registro.PDF_URL = '';
@@ -1094,11 +1243,13 @@ function apiSalvarVistoria(dados) {
     AUT_APPEND_OBJ_(AUT_REGISTRO_SHEET_(ss), registro);
     AUT_UPSERT_PROCESSO_LAUDO_(ss, registro);
     AUT_SET_STATUS_PROCESSO_V7_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, 'REGISTRADO');
+    var fotosRemovidas = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
     var qtdFotos = AUT_VINCULAR_FOTOS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
     AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, registro.ID_LAUDO);
     var qtdItens = AUT_VINCULAR_AMBIENTES_ITENS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosLimpos);
     AUT_APPEND_AUDITORIA_V7_(ss, 'CRIAR_LAUDO_REGISTRADO', registro.ID_LAUDO, {
       numeroLaudo: registro.NUMERO_LAUDO,
+      fotosRemovidas: fotosRemovidas,
       qtdFotos: qtdFotos,
       qtdItens: qtdItens
     }, '', registro.HASH_LAUDO);
@@ -1158,7 +1309,7 @@ function apiSalvarRascunhoVistoria(idLaudo, dados) {
       dadosOriginais.__editado_em = dados.__rascunho_salvo_em;
     }
 
-    var dadosLimpos = AUT_PURGE_PAYLOAD_(dadosOriginais);
+    var dadosLimpos = AUT_REMOVER_CONTROLES_EDICAO_V7_(AUT_PURGE_PAYLOAD_(dadosOriginais));
     var hashNovo = AUT_HASH_((idDestino || 'NOVO_RASCUNHO') + ':RASCUNHO:' + JSON.stringify(dadosLimpos) + ':' + new Date().getTime());
     var registro = AUT_MONTAR_REGISTRO_LAUDO_(dadosLimpos, idDestino || null, hashNovo);
     registro.REVISAO_STATUS = editadoDe ? 'RASCUNHO_REVISAO' : 'RASCUNHO';
@@ -1185,6 +1336,7 @@ function apiSalvarRascunhoVistoria(idLaudo, dados) {
       HASH_DOCUMENTO: '',
       MANIFESTO_URL: ''
     });
+    var fotosRemovidas = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
     var qtdFotos = AUT_VINCULAR_FOTOS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
     AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, registro.ID_LAUDO);
     var qtdItens = AUT_VINCULAR_AMBIENTES_ITENS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosLimpos);
@@ -1192,6 +1344,7 @@ function apiSalvarRascunhoVistoria(idLaudo, dados) {
       idOrigem: editadoDe || '',
       numeroLaudo: registro.NUMERO_LAUDO,
       alteracoes: alteracoes,
+      fotosRemovidas: fotosRemovidas,
       qtdFotos: qtdFotos,
       qtdItens: qtdItens
     }, hashAnterior, hashNovo);
@@ -1253,7 +1406,7 @@ function apiAtualizarVistoria(idLaudo, dados) {
         dadosOriginais.__historico_alteracoes = alteracoes;
         dadosOriginais.__editado_em = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
       }
-      var dadosFinalizados = AUT_PURGE_PAYLOAD_(dadosOriginais);
+      var dadosFinalizados = AUT_REMOVER_CONTROLES_EDICAO_V7_(AUT_PURGE_PAYLOAD_(dadosOriginais));
       var hashFinal = AUT_HASH_(idAnterior + ':FINALIZAR_RASCUNHO:' + JSON.stringify(dadosFinalizados) + ':' + new Date().getTime());
       var registroFinal = AUT_MONTAR_REGISTRO_LAUDO_(dadosFinalizados, idAnterior, hashFinal);
       registroFinal.REVISAO = editadoDe ? 'SIM' : '';
@@ -1278,12 +1431,14 @@ function apiAtualizarVistoria(idLaudo, dados) {
       });
       if (editadoDe) AUT_MARCAR_PROCESSO_SUBSTITUIDO_V7_(ss, editadoDe, idAnterior);
       AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, idAnterior);
+      var fotosRemovidasFinal = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, idAnterior, registroFinal.NUMERO_LAUDO, dadosOriginais);
       var fotosFinal = AUT_VINCULAR_FOTOS_(ss, idAnterior, registroFinal.NUMERO_LAUDO, dadosOriginais);
       var itensFinal = AUT_VINCULAR_AMBIENTES_ITENS_(ss, idAnterior, registroFinal.NUMERO_LAUDO, dadosFinalizados);
       AUT_APPEND_AUDITORIA_V7_(ss, 'FINALIZAR_RASCUNHO_LAUDO', idAnterior, {
         idOrigem: editadoDe || '',
         numeroLaudo: registroFinal.NUMERO_LAUDO,
         alteracoes: alteracoes,
+        fotosRemovidas: fotosRemovidasFinal,
         qtdFotos: fotosFinal,
         qtdItens: itensFinal
       }, hashAnterior, hashFinal);
@@ -1309,7 +1464,7 @@ function apiAtualizarVistoria(idLaudo, dados) {
     dadosOriginais.__historico_alteracoes = alteracoes;
     dadosOriginais.__editado_em = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
 
-    var dadosLimpos = AUT_PURGE_PAYLOAD_(dadosOriginais);
+    var dadosLimpos = AUT_REMOVER_CONTROLES_EDICAO_V7_(AUT_PURGE_PAYLOAD_(dadosOriginais));
     var idNovo = AUT_GERAR_ID_REVISAO_V7_(ss, idAnterior);
     var hashNovo = AUT_HASH_(idAnterior + '->' + idNovo + JSON.stringify(dadosLimpos) + new Date().getTime());
     var registro = AUT_MONTAR_REGISTRO_LAUDO_(dadosLimpos, idNovo, hashNovo);
@@ -1333,6 +1488,7 @@ function apiAtualizarVistoria(idLaudo, dados) {
     AUT_MARCAR_PROCESSO_SUBSTITUIDO_V7_(ss, idAnterior, idNovo);
     AUT_UPSERT_PROCESSO_LAUDO_(ss, registro);
     AUT_SET_STATUS_PROCESSO_V7_(ss, idNovo, registro.NUMERO_LAUDO, 'REGISTRADO');
+    var fotosRemovidasRevisao = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, idNovo, registro.NUMERO_LAUDO, dadosOriginais);
     var qtdFotos = AUT_VINCULAR_FOTOS_(ss, idNovo, registro.NUMERO_LAUDO, dadosOriginais);
     AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, idNovo);
     var qtdItens = AUT_VINCULAR_AMBIENTES_ITENS_(ss, idNovo, registro.NUMERO_LAUDO, dadosLimpos);
@@ -1341,6 +1497,7 @@ function apiAtualizarVistoria(idLaudo, dados) {
       idNovo: idNovo,
       numeroNovo: registro.NUMERO_LAUDO,
       alteracoes: alteracoes,
+      fotosRemovidas: fotosRemovidasRevisao,
       qtdFotos: qtdFotos,
       qtdItens: qtdItens
     }, hashAnterior, hashNovo);
