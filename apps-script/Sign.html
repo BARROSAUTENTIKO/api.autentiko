@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AUTENTIKO Sign</title>
+  <style>
+    :root {
+      --bg: #eef4fb;
+      --card: #ffffff;
+      --line: #d7e2ef;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --ok: #047857;
+      --warn: #b45309;
+      --bad: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px 14px 44px;
+    }
+    .hero {
+      background: #0f172a;
+      color: #fff;
+      border-radius: 12px;
+      padding: 22px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+    }
+    .brand {
+      font-size: 12px;
+      color: #bfdbfe;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    h1 { margin: 6px 0 8px; font-size: 28px; }
+    .hero p { margin: 0; color: #cbd5e1; line-height: 1.45; }
+    .seal {
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 10px;
+      padding: 14px;
+      min-width: 210px;
+      background: rgba(255,255,255,.06);
+    }
+    .seal strong { display: block; font-size: 18px; margin-bottom: 3px; }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .step { display: none; }
+    .step.active { display: block; }
+    .meta {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .meta div {
+      padding: 9px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      word-break: break-word;
+    }
+    .meta .k { background: #f8fafc; font-weight: 700; color: #334155; }
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 16px;
+      letter-spacing: 0.08em;
+    }
+    .check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 14px 0;
+      color: #334155;
+      line-height: 1.4;
+      font-size: 14px;
+    }
+    .check input { width: 18px; height: 18px; margin-top: 1px; }
+    button {
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    button.secondary { background: #e2e8f0; color: #0f172a; }
+    button.success { background: var(--ok); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .status {
+      margin-top: 12px;
+      border-left: 4px solid var(--primary);
+      background: #f8fafc;
+      padding: 10px 12px;
+      color: #334155;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .status.ok { border-left-color: var(--ok); }
+    .status.bad { border-left-color: var(--bad); }
+    .status.warn { border-left-color: var(--warn); }
+    video {
+      width: 100%;
+      max-height: 380px;
+      background: #020617;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    .prompt {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .prompt span {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .timeline {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      color: #334155;
+      font-size: 13px;
+    }
+    .timeline li {
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .small { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    @media (max-width: 760px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .seal { min-width: 0; }
+      h1 { font-size: 24px; }
+      .prompt { grid-template-columns: 1fr; }
+      .meta { grid-template-columns: 120px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="brand">AUTENTIKO-OK CHECK | Palmer Imoveis</div>
+        <h1>Assinatura eletronica auditavel</h1>
+        <p>Valide o token recebido por e-mail, registre o aceite, autorize as evidencias tecnicas e conclua a assinatura do laudo.</p>
+      </div>
+      <div class="seal">
+        <strong id="seal-status">Verificando</strong>
+        <span id="seal-detail">Carregando link seguro...</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div id="step-load" class="step active">
+          <h2>Validando link</h2>
+          <p class="small">Aguarde enquanto o AUTENTIKO confirma o ID da sessao, o prazo e o signatario.</p>
+          <div class="status">Iniciando validacao...</div>
+        </div>
+
+        <div id="step-token" class="step">
+          <h2>1. Token de e-mail</h2>
+          <div id="session-meta" class="meta"></div>
+          <label for="token">Token recebido por e-mail</label>
+          <input id="token" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="000000">
+          <button id="btn-token" onclick="validarToken()">Validar token</button>
+          <div id="token-status" class="status">Digite o token para liberar as proximas etapas.</div>
+        </div>
+
+        <div id="step-evidence" class="step">
+          <h2>2. Evidencias e aceite</h2>
+          <p class="small">O sistema tentara registrar contexto tecnico, geolocalizacao consentida, validacao do aparelho por passkey/WebAuthn e um video curto do rosto.</p>
+          <div class="check">
+            <input id="aceite" type="checkbox">
+            <span>Declaro que sou o signatario indicado, que li/recebi o laudo e autorizo o uso das evidencias para compor a trilha de auditoria desta assinatura.</span>
+          </div>
+          <button class="secondary" onclick="coletarContexto()">Coletar contexto e localizacao</button>
+          <button class="secondary" onclick="validarPasskey()">Validar aparelho com passkey</button>
+          <button onclick="abrirCamera()">Abrir camera</button>
+          <video id="video" playsinline muted></video>
+          <div class="prompt">
+            <span>Olhe para a camera</span>
+            <span>Pisque naturalmente</span>
+            <span>Sorria por 1 segundo</span>
+            <span>Gire levemente o rosto</span>
+          </div>
+          <button id="btn-record" class="success" onclick="gravarEvidencias()" disabled>Gravar video e enviar evidencias</button>
+          <div id="evidence-status" class="status warn">Aguardando coleta de evidencias.</div>
+        </div>
+
+        <div id="step-finish" class="step">
+          <h2>3. Conclusao</h2>
+          <p>As evidencias foram enviadas. Conclua para selar sua assinatura no manifesto.</p>
+          <button id="btn-finish" class="success" onclick="concluirAssinatura()">Concluir assinatura</button>
+          <div id="finish-status" class="status">Pronto para concluir.</div>
+        </div>
+
+        <div id="step-done" class="step">
+          <h2>Assinatura registrada</h2>
+          <p id="done-text">Sua assinatura foi registrada na trilha de auditoria.</p>
+          <p class="small" id="done-links"></p>
+        </div>
+      </div>
+
+      <aside class="card">
+        <h3>Trilha desta sessao</h3>
+        <ul id="timeline" class="timeline">
+          <li>Link aberto</li>
+        </ul>
+        <p class="small" style="margin-top:12px;">Dados sensiveis ficam restritos ao painel administrativo. A consulta publica exibe apenas ID, status e hashes.</p>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    var AUT_SIGN_ID = <?!= JSON.stringify(String(idAssinatura || '')) ?>;
+    var AUT_SIGN_NONCE = <?!= JSON.stringify(String(nonce || '')) ?>;
+    var sessao = null;
+    var contexto = {};
+    var passkey = null;
+    var streamAtual = null;
+    var evidenciasOk = false;
+
+    function $(id) { return document.getElementById(id); }
+    function showStep(id) {
+      document.querySelectorAll('.step').forEach(function(el) { el.classList.remove('active'); });
+      $(id).classList.add('active');
+    }
+    function statusBox(id, msg, cls) {
+      var el = $(id);
+      if (!el) return;
+      el.className = 'status' + (cls ? ' ' + cls : '');
+      el.textContent = msg;
+    }
+    function timeline(msg) {
+      var li = document.createElement('li');
+      li.textContent = new Date().toLocaleTimeString('pt-BR') + ' - ' + msg;
+      $('timeline').appendChild(li);
+    }
+    function setSeal(status, detail) {
+      $('seal-status').textContent = status;
+      $('seal-detail').textContent = detail || '';
+    }
+    function escapeHtml(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+    function gasValidarLink() {
+      google.script.run.withSuccessHandler(function(res) {
+        if (!res || !res.sucesso) {
+          setSeal('Link invalido', res && res.msg ? res.msg : 'Nao foi possivel validar.');
+          statusBox('step-load', res && res.msg ? res.msg : 'Link invalido.', 'bad');
+          return;
+        }
+        sessao = res.assinatura;
+        setSeal(sessao.signatario.papelLabel, 'Laudo ' + (sessao.numeroLaudo || sessao.idLaudo));
+        renderMeta(sessao);
+        timeline('Sessao validada');
+        if (res.jaAssinado) {
+          $('done-text').textContent = res.msg;
+          showStep('step-done');
+        } else {
+          showStep('step-token');
+        }
+      }).withFailureHandler(function(err) {
+        setSeal('Erro', err && err.message ? err.message : String(err));
+        statusBox('step-load', 'Erro ao validar link.', 'bad');
+      }).apiSignValidarLink(AUT_SIGN_ID, AUT_SIGN_NONCE);
+    }
+    function renderMeta(s) {
+      $('session-meta').innerHTML =
+        '<div class="k">Laudo</div><div>' + escapeHtml(s.numeroLaudo || s.idLaudo) + '</div>' +
+        '<div class="k">Signatario</div><div>' + escapeHtml(s.signatario.nome || '') + '</div>' +
+        '<div class="k">Papel</div><div>' + escapeHtml(s.signatario.papelLabel || '') + '</div>' +
+        '<div class="k">E-mail</div><div>' + escapeHtml(s.signatario.emailMascarado || '') + '</div>' +
+        '<div class="k">Expira em</div><div>' + escapeHtml(s.expiraEm || '') + '</div>';
+    }
+    function deviceInfo() {
+      return {
+        userAgent: navigator.userAgent || '',
+        language: navigator.language || '',
+        languages: navigator.languages || [],
+        platform: navigator.platform || '',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+        screen: { width: screen.width, height: screen.height, colorDepth: screen.colorDepth },
+        touch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+        webdriver: navigator.webdriver === true,
+        referrer: document.referrer || ''
+      };
+    }
+    function getGeo() {
+      return new Promise(function(resolve) {
+        if (!navigator.geolocation) return resolve({ erro: 'GEOLOCATION_NAO_SUPORTADA' });
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: pos.timestamp
+          });
+        }, function(err) {
+          resolve({ erro: err && err.message ? err.message : 'GEOLOCALIZACAO_NEGADA' });
+        }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+      });
+    }
+    function getIp() {
+      return fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
+        .then(function(r) { return r.json(); })
+        .then(function(j) { return j.ip || ''; })
+        .catch(function() { return ''; });
+    }
+    function coletarContexto() {
+      statusBox('evidence-status', 'Coletando navegador, IP e geolocalizacao...', 'warn');
+      Promise.all([getIp(), getGeo()]).then(function(parts) {
+        contexto = { ipPublico: parts[0], geolocation: parts[1], device: deviceInfo(), coletadoEm: new Date().toISOString() };
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'CONTEXTO_COLETADO', contexto);
+        timeline('Contexto tecnico coletado');
+        statusBox('evidence-status', 'Contexto coletado. Agora valide o aparelho ou grave as evidencias.', 'ok');
+      });
+    }
+    function validarToken() {
+      var token = $('token').value.trim();
+      if (!token) return statusBox('token-status', 'Informe o token recebido por e-mail.', 'bad');
+      $('btn-token').disabled = true;
+      var ctx = { device: deviceInfo(), tokenInformadoEm: new Date().toISOString() };
+      google.script.run.withSuccessHandler(function(res) {
+        $('btn-token').disabled = false;
+        if (res && res.sucesso) {
+          timeline('Token validado');
+          statusBox('token-status', res.msg || 'Token validado.', 'ok');
+          showStep('step-evidence');
+          coletarContexto();
+        } else {
+          statusBox('token-status', res && res.msg ? res.msg : 'Token invalido.', 'bad');
+          timeline('Falha de token registrada');
+        }
+      }).withFailureHandler(function(err) {
+        $('btn-token').disabled = false;
+        statusBox('token-status', err && err.message ? err.message : 'Erro ao validar token.', 'bad');
+      }).apiSignVerificarToken(AUT_SIGN_ID, AUT_SIGN_NONCE, token, ctx);
+    }
+    function bufferToBase64Url(buffer) {
+      var bytes = new Uint8Array(buffer);
+      var str = '';
+      for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+      return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    }
+    function credentialToPlain(cred) {
+      if (!cred) return null;
+      return {
+        id: cred.id,
+        type: cred.type,
+        rawId: cred.rawId ? bufferToBase64Url(cred.rawId) : '',
+        response: cred.response ? {
+          clientDataJSON: cred.response.clientDataJSON ? bufferToBase64Url(cred.response.clientDataJSON) : '',
+          attestationObject: cred.response.attestationObject ? bufferToBase64Url(cred.response.attestationObject) : ''
+        } : {}
+      };
+    }
+    function validarPasskey() {
+      if (!window.PublicKeyCredential || !navigator.credentials || !navigator.credentials.create) {
+        passkey = null;
+        timeline('Passkey nao suportada');
+        statusBox('evidence-status', 'Passkey/WebAuthn nao suportada neste navegador. O evento sera registrado.', 'warn');
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'PASSKEY_NAO_SUPORTADA', { device: deviceInfo() });
+        return;
+      }
+      statusBox('evidence-status', 'Chamando autenticacao do aparelho...', 'warn');
+      var challenge = new TextEncoder().encode(AUT_SIGN_ID + ':' + Date.now());
+      var userId = new TextEncoder().encode((sessao && sessao.signatario && sessao.signatario.idSignatario) || AUT_SIGN_ID).slice(0, 64);
+      navigator.credentials.create({
+        publicKey: {
+          challenge: challenge,
+          rp: { name: 'AUTENTIKO-OK CHECK' },
+          user: {
+            id: userId,
+            name: (sessao && sessao.signatario && sessao.signatario.emailMascarado) || 'signatario',
+            displayName: (sessao && sessao.signatario && sessao.signatario.nome) || 'Signatario'
+          },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+          timeout: 60000,
+          authenticatorSelection: { userVerification: 'preferred' },
+          attestation: 'none'
+        }
+      }).then(function(cred) {
+        passkey = credentialToPlain(cred);
+        timeline('Passkey/WebAuthn registrada');
+        statusBox('evidence-status', 'Passkey registrada como evidencia tecnica do aparelho.', 'ok');
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'PASSKEY_REGISTRADA', { id: passkey.id, type: passkey.type });
+      }).catch(function(err) {
+        passkey = null;
+        timeline('Passkey recusada ou indisponivel');
+        statusBox('evidence-status', 'Passkey nao foi concluida: ' + (err && err.message ? err.message : err), 'warn');
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'PASSKEY_FALHOU', { erro: err && err.message ? err.message : String(err) });
+      });
+    }
+    function abrirCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusBox('evidence-status', 'Camera nao suportada neste navegador.', 'bad');
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'CAMERA_NAO_SUPORTADA', { device: deviceInfo() });
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: true })
+        .then(function(stream) {
+          streamAtual = stream;
+          $('video').srcObject = stream;
+          $('video').play();
+          $('btn-record').disabled = false;
+          timeline('Camera aberta');
+          statusBox('evidence-status', 'Camera aberta. Siga os movimentos e grave o video.', 'ok');
+        })
+        .catch(function(err) {
+          statusBox('evidence-status', 'Nao foi possivel acessar camera/microfone: ' + (err && err.message ? err.message : err), 'bad');
+          google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'CAMERA_NEGADA', { erro: err && err.message ? err.message : String(err) });
+        });
+    }
+    function blobToDataUrl(blob) {
+      return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function() { resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+    function capturarFotoDataUrl() {
+      var video = $('video');
+      var canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 480;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.68);
+    }
+    function uploadEvidencia(tipo, dataUrl, meta) {
+      return new Promise(function(resolve, reject) {
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
+          .apiSignUploadEvidencia(AUT_SIGN_ID, AUT_SIGN_NONCE, tipo, dataUrl, meta || {});
+      });
+    }
+    function gravarEvidencias() {
+      if (!streamAtual) return statusBox('evidence-status', 'Abra a camera antes de gravar.', 'bad');
+      $('btn-record').disabled = true;
+      statusBox('evidence-status', 'Gravando video por alguns segundos...', 'warn');
+      var chunks = [];
+      var mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : 'video/webm';
+      var recorder = new MediaRecorder(streamAtual, { mimeType: mime, videoBitsPerSecond: 420000, audioBitsPerSecond: 48000 });
+      recorder.ondataavailable = function(ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+      recorder.onerror = function(ev) {
+        statusBox('evidence-status', 'Erro ao gravar video: ' + (ev.error && ev.error.message ? ev.error.message : 'falha'), 'bad');
+        $('btn-record').disabled = false;
+      };
+      recorder.onstop = function() {
+        var foto = capturarFotoDataUrl();
+        var blob = new Blob(chunks, { type: mime });
+        if (blob.size > 14 * 1024 * 1024) {
+          statusBox('evidence-status', 'Video ficou grande demais. Grave novamente em ambiente com boa luz.', 'bad');
+          $('btn-record').disabled = false;
+          google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'VIDEO_GRANDE_CLIENTE', { tamanhoBytes: blob.size });
+          return;
+        }
+        statusBox('evidence-status', 'Enviando foto e video protegidos...', 'warn');
+        blobToDataUrl(blob).then(function(videoDataUrl) {
+          return uploadEvidencia('FOTO_ROSTO', foto, { contexto: contexto, tipo: 'foto_final' })
+            .then(function(r1) {
+              if (!r1 || !r1.sucesso) throw new Error(r1 && r1.msg ? r1.msg : 'Falha no envio da foto.');
+              return uploadEvidencia('VIDEO_ROSTO', videoDataUrl, { contexto: contexto, duracaoSegundos: 6, movimentos: ['olhar', 'piscar', 'sorrir', 'girar_rosto'] });
+            });
+        }).then(function(r2) {
+          if (!r2 || !r2.sucesso) throw new Error(r2 && r2.msg ? r2.msg : 'Falha no envio do video.');
+          evidenciasOk = true;
+          timeline('Foto e video enviados');
+          statusBox('evidence-status', 'Evidencias enviadas e hasheadas.', 'ok');
+          showStep('step-finish');
+        }).catch(function(err) {
+          $('btn-record').disabled = false;
+          statusBox('evidence-status', err && err.message ? err.message : String(err), 'bad');
+        });
+      };
+      recorder.start();
+      setTimeout(function() {
+        if (recorder.state === 'recording') recorder.stop();
+      }, 6200);
+    }
+    function concluirAssinatura() {
+      if (!$('aceite').checked) return statusBox('finish-status', 'Marque o aceite para concluir.', 'bad');
+      if (!evidenciasOk) return statusBox('finish-status', 'Envie as evidencias antes de concluir.', 'bad');
+      $('btn-finish').disabled = true;
+      statusBox('finish-status', 'Selando assinatura e manifesto...', 'warn');
+      google.script.run.withSuccessHandler(function(res) {
+        $('btn-finish').disabled = false;
+        if (res && res.sucesso) {
+          timeline('Assinatura concluida');
+          $('done-text').textContent = res.msg || 'Assinatura concluida.';
+          var links = [];
+          if (res.manifestoUrl) links.push('<a href="' + escapeHtml(res.manifestoUrl) + '" target="_blank">Manifesto</a>');
+          if (res.pdfAssinadoUrl) links.push('<a href="' + escapeHtml(res.pdfAssinadoUrl) + '" target="_blank">PDF assinado</a>');
+          $('done-links').innerHTML = links.join(' | ');
+          showStep('step-done');
+          try { if (streamAtual) streamAtual.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
+        } else {
+          statusBox('finish-status', res && res.msg ? res.msg : 'Erro ao concluir.', 'bad');
+        }
+      }).withFailureHandler(function(err) {
+        $('btn-finish').disabled = false;
+        statusBox('finish-status', err && err.message ? err.message : String(err), 'bad');
+      }).apiSignConcluir(AUT_SIGN_ID, AUT_SIGN_NONCE, {
+        aceite: true,
+        contexto: contexto,
+        passkey: passkey
+      });
+    }
+    window.addEventListener('load', function() {
+      if (!AUT_SIGN_ID || !AUT_SIGN_NONCE) {
+        setSeal('Link incompleto', 'ID ou chave ausente.');
+        statusBox('step-load', 'Link incompleto.', 'bad');
+        return;
+      }
+      gasValidarLink();
+    });
+  </script>
+</body>
+</html>
