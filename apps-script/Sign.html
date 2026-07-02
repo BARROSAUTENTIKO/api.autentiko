@@ -252,7 +252,7 @@
 
         <div id="step-evidence" class="step">
           <h2>2. Evidencias e aceite</h2>
-          <p class="small">O sistema so inicia a coleta apos autorizacao expressa. A camera fara verificacao tecnica de luz, presenca de rosto humano quando suportado pelo navegador, e movimentos guiados para reduzir risco de assinatura por imagem estatica.</p>
+          <p class="small">O sistema so inicia a coleta apos autorizacao expressa. A camera fara verificacao tecnica de luz, rosto humano por detector facial MediaPipe/nativo e movimentos guiados para reduzir risco de assinatura por imagem estatica.</p>
           <div class="check">
             <input id="aceite" type="checkbox">
             <span>Declaro que sou o signatario indicado, que li/recebi o laudo e autorizo o uso das evidencias para compor a trilha de auditoria desta assinatura.</span>
@@ -262,7 +262,7 @@
             <div class="check"><input id="consent-contexto" type="checkbox"><span>Autorizo coletar dados tecnicos do navegador, aparelho, IP publico mascarado/hash e horario para auditoria.</span></div>
             <div class="check"><input id="consent-geo" type="checkbox"><span>Autorizo solicitar geolocalizacao aproximada pelo navegador, ciente de que posso negar pelo sistema operacional.</span></div>
             <div class="check"><input id="consent-camera" type="checkbox"><span>Autorizo usar camera e microfone para foto, video curto e desafio de movimentos.</span></div>
-            <div class="check"><input id="consent-face" type="checkbox"><span>Autorizo a verificacao tecnica local de luz, rosto e movimento. Esta verificacao nao substitui biometria certificada.</span></div>
+            <div class="check"><input id="consent-face" type="checkbox"><span>Autorizo a verificacao tecnica local de luz, detector facial e movimento. Esta verificacao nao substitui biometria certificada.</span></div>
             <div class="check"><input id="consent-drive" type="checkbox"><span>Autorizo armazenar as evidencias protegidas no Drive restrito do sistema e gravar seus hashes no manifesto.</span></div>
           </div>
           <button class="secondary" onclick="coletarContexto()">Coletar contexto e localizacao</button>
@@ -319,6 +319,11 @@
     var evidenciasOk = false;
     var livenessResultado = null;
     var faceDetector = null;
+    var mpFaceDetector = null;
+    var mpFaceDetectorErro = '';
+    var MP_TASKS_VERSION = '0.10.35';
+    var MP_TASKS_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + MP_TASKS_VERSION;
+    var MP_FACE_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite';
     var monitorCameraTimer = null;
 
     function $(id) { return document.getElementById(id); }
@@ -559,6 +564,85 @@
       }
       return faceDetector;
     }
+    function primeiroDefinido(obj, chaves, padrao) {
+      obj = obj || {};
+      for (var i = 0; i < chaves.length; i++) {
+        if (obj[chaves[i]] !== undefined && obj[chaves[i]] !== null) return obj[chaves[i]];
+      }
+      return padrao;
+    }
+    function avaliarCaixaRosto(box, frame, score, metodo) {
+      box = box || {};
+      var x = Number(primeiroDefinido(box, ['originX', 'origin_x', 'x'], 0));
+      var y = Number(primeiroDefinido(box, ['originY', 'origin_y', 'y'], 0));
+      var w = Number(primeiroDefinido(box, ['width'], 0));
+      var h = Number(primeiroDefinido(box, ['height'], 0));
+      var area = (w * h) / (frame.width * frame.height);
+      var centroX = x + (w / 2);
+      var centroY = y + (h / 2);
+      var central = centroX > frame.width * 0.22 &&
+        centroX < frame.width * 0.78 &&
+        centroY > frame.height * 0.18 &&
+        centroY < frame.height * 0.82;
+      var areaOk = area >= 0.045 && area <= 0.72;
+      var scoreOk = score === null || score === undefined || Number(score) >= 0.68;
+      return {
+        ok: areaOk && central && scoreOk,
+        metodo: metodo,
+        detalhe: 'score ' + (score === null || score === undefined ? 'n/a' : Math.round(Number(score) * 100) + '%') +
+          ' | area ' + Math.round(area * 100) + '% | centro ' + Math.round(centroX) + ',' + Math.round(centroY),
+        areaPct: Math.round(area * 100),
+        score: score === null || score === undefined ? '' : Math.round(Number(score) * 1000) / 1000,
+        centroX: Math.round(centroX),
+        centroY: Math.round(centroY)
+      };
+    }
+    function carregarMediaPipeFaceDetector() {
+      if (mpFaceDetector) return Promise.resolve(mpFaceDetector);
+      if (mpFaceDetectorErro) return Promise.resolve(null);
+      statusBox('evidence-status', 'Carregando detector facial seguro...', 'warn');
+      return import(MP_TASKS_BASE + '/vision_bundle.mjs').then(function(vision) {
+        if (!vision || !vision.FilesetResolver || !vision.FaceDetector) throw new Error('MediaPipe incompleto.');
+        return vision.FilesetResolver.forVisionTasks(MP_TASKS_BASE + '/wasm').then(function(fileset) {
+          return vision.FaceDetector.createFromOptions(fileset, {
+            baseOptions: {
+              modelAssetPath: MP_FACE_MODEL,
+              delegate: 'CPU'
+            },
+            runningMode: 'IMAGE',
+            minDetectionConfidence: 0.68,
+            minSuppressionThreshold: 0.3
+          });
+        });
+      }).then(function(detector) {
+        mpFaceDetector = detector;
+        timeline('Detector facial MediaPipe carregado');
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'MEDIAPIPE_FACE_CARREGADO', { versao: MP_TASKS_VERSION });
+        return mpFaceDetector;
+      }).catch(function(err) {
+        mpFaceDetectorErro = err && err.message ? err.message : String(err);
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'MEDIAPIPE_FACE_FALHOU', {
+          erro: mpFaceDetectorErro,
+          versao: MP_TASKS_VERSION
+        });
+        return null;
+      });
+    }
+    function detectarRostoMediaPipe(frame) {
+      return carregarMediaPipeFaceDetector().then(function(detector) {
+        if (!detector) return null;
+        try {
+          var result = detector.detect(frame.canvas);
+          var detections = result && result.detections ? result.detections : [];
+          var det = detections[0];
+          if (!det) return { ok: false, metodo: 'MediaPipeFaceDetector', detalhe: 'Nenhum rosto humano detectado.' };
+          var categoria = det.categories && det.categories[0] ? det.categories[0] : {};
+          return avaliarCaixaRosto(det.boundingBox || {}, frame, categoria.score, 'MediaPipeFaceDetector');
+        } catch (err) {
+          return { ok: false, metodo: 'MediaPipeFaceDetector_ERRO', detalhe: err && err.message ? err.message : String(err) };
+        }
+      });
+    }
     function quadroDaCamera() {
       var video = $('video');
       if (!video || !video.videoWidth || !video.videoHeight) throw new Error('Camera ainda nao entregou imagem valida.');
@@ -617,37 +701,29 @@
       return m;
     }
     function detectarRosto(frame, metricas) {
-      var detector = prepararFaceDetector();
-      if (detector) {
-        return detector.detect(frame.canvas).then(function(faces) {
-          var face = faces && faces[0];
-          if (!face) return { ok: false, metodo: 'FaceDetector', detalhe: 'Nenhum rosto detectado.' };
-          var box = face.boundingBox || {};
-          var area = ((box.width || 0) * (box.height || 0)) / (frame.width * frame.height);
-          var central = (box.x || 0) > frame.width * 0.05 &&
-            ((box.x || 0) + (box.width || 0)) < frame.width * 0.95 &&
-            (box.y || 0) > 0 &&
-            ((box.y || 0) + (box.height || 0)) < frame.height;
-          return {
-            ok: area >= 0.045 && area <= 0.72 && central,
-            metodo: 'FaceDetector',
-            detalhe: 'Rostos: ' + faces.length + ' | area: ' + Math.round(area * 100) + '%',
-            areaPct: Math.round(area * 100)
-          };
-        }).catch(function(err) {
-          return { ok: false, metodo: 'FaceDetector_ERRO', detalhe: err && err.message ? err.message : String(err) };
-        });
-      }
-      var heuristicaOk = metricas.luzOk &&
-        metricas.centroContraste >= 13 &&
-        metricas.centroLuma >= 45 &&
-        metricas.centroLuma <= 230 &&
-        (metricas.peleCentroPct >= 0.015 || metricas.centroContraste >= 24);
-      return Promise.resolve({
-        ok: heuristicaOk,
-        metodo: 'heuristica_local',
-        detalhe: 'Detector nativo ausente. Luz/contraste/centro avaliados localmente.',
-        peleCentroPct: Math.round(metricas.peleCentroPct * 1000) / 10
+      return detectarRostoMediaPipe(frame).then(function(faceMp) {
+        if (faceMp && (faceMp.ok || faceMp.metodo === 'MediaPipeFaceDetector')) return faceMp;
+        var detector = prepararFaceDetector();
+        if (detector) {
+          return detector.detect(frame.canvas).then(function(faces) {
+            var face = faces && faces[0];
+            if (!face) return { ok: false, metodo: 'FaceDetector', detalhe: 'Nenhum rosto humano detectado.' };
+            return avaliarCaixaRosto(face.boundingBox || {}, frame, null, 'FaceDetector');
+          }).catch(function(err) {
+            return { ok: false, metodo: 'FaceDetector_ERRO', detalhe: err && err.message ? err.message : String(err) };
+          });
+        }
+        return {
+          ok: false,
+          metodo: 'detector_facial_indisponivel',
+          detalhe: 'Nao foi possivel carregar MediaPipe nem FaceDetector nativo. Use Chrome/Edge atualizado e conexao liberada.',
+          diagnosticoLocal: {
+            luzOk: metricas.luzOk,
+            centroContraste: metricas.centroContraste,
+            peleCentroPct: Math.round(metricas.peleCentroPct * 1000) / 10,
+            erroMediaPipe: mpFaceDetectorErro || ''
+          }
+        };
       });
     }
     function diferencaFrames(a, b) {
@@ -750,9 +826,25 @@
             marcarDesafio(fase.id, 'active');
             statusBox('evidence-status', fase.msg, 'warn');
             return medirMovimento(fase.ms).then(function(mov) {
-              var ok = mov.maxScore >= fase.min || mov.amplitudeX >= 10;
-              resultados.push({ id: fase.id, ok: ok, maxScore: mov.maxScore, mediaScore: mov.mediaScore, amplitudeX: mov.amplitudeX, amostras: mov.amostras });
-              marcarDesafio(fase.id, ok ? 'ok' : '');
+              return analisarCameraAtual().then(function(pos) {
+                atualizarStatusCamera(pos);
+                var faceOk = !!(pos.face && pos.face.ok);
+                var luzOk = !!(pos.metricas && pos.metricas.luzOk);
+                var movimentoOk = mov.maxScore >= fase.min || mov.amplitudeX >= 10;
+                var ok = faceOk && luzOk && movimentoOk;
+                resultados.push({
+                  id: fase.id,
+                  ok: ok,
+                  faceOk: faceOk,
+                  luzOk: luzOk,
+                  metodoFace: pos.face ? pos.face.metodo : '',
+                  maxScore: mov.maxScore,
+                  mediaScore: mov.mediaScore,
+                  amplitudeX: mov.amplitudeX,
+                  amostras: mov.amostras
+                });
+                marcarDesafio(fase.id, ok ? 'ok' : '');
+              });
             });
           });
         });
