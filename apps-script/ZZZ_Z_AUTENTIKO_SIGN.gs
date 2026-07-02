@@ -265,6 +265,16 @@ function AUT_SIGN_TEM_EVIDENCIA_(idAssinatura, idSignatario, tipo) {
   return false;
 }
 
+function AUT_SIGN_LIVENESS_VALIDO_(liveness) {
+  liveness = liveness || {};
+  var movimentos = Array.isArray(liveness.movimentos) ? liveness.movimentos : [];
+  var movimentosOk = movimentos.filter(function(m) { return m && m.ok === true; }).length;
+  return liveness.aprovado === true &&
+    liveness.luz && liveness.luz.luzOk === true &&
+    liveness.rosto && liveness.rosto.ok === true &&
+    movimentosOk >= 3;
+}
+
 function AUT_SIGN_LABEL_PAPEL_(papel) {
   var p = String(papel || '').toUpperCase();
   var mapa = {
@@ -515,6 +525,20 @@ function apiSignUploadEvidencia(idAssinatura, nonce, tipo, dataUrl, meta) {
   try {
     var sign = AUT_SIGN_ENCONTRAR_SIGNATARIO_POR_NONCE_(idAssinatura, nonce);
     if (!sign) return { sucesso: false, msg: 'Sessao invalida.' };
+    meta = meta || {};
+    var tipoUpper = String(tipo || 'EVIDENCIA').toUpperCase();
+    if (tipoUpper === 'VIDEO_ROSTO') {
+      var liveness = meta.liveness || {};
+      var consent = meta.consentimentos || {};
+      if (!AUT_SIGN_LIVENESS_VALIDO_(liveness) || consent.cameraMicrofone !== true || consent.verificacaoFaceMovimento !== true || consent.driveRestrito !== true) {
+        AUT_SIGN_EVENTO_(idAssinatura, sign.ID_SIGNATARIO, 'EVIDENCIA_REJEITADA_LIVENESS', 'SIGNATARIO', {
+          tipo: tipoUpper,
+          livenessAprovado: AUT_SIGN_LIVENESS_VALIDO_(liveness),
+          consentimentos: consent
+        });
+        return { sucesso: false, msg: 'Video recusado: validacao de luz, rosto, movimentos e consentimentos e obrigatoria.' };
+      }
+    }
     var entrada = String(dataUrl || '');
     var mime = 'application/octet-stream';
     var raw = entrada;
@@ -541,7 +565,7 @@ function apiSignUploadEvidencia(idAssinatura, nonce, tipo, dataUrl, meta) {
       ID_EVIDENCIA: AUT_SIGN_NOVO_ID_('EVD'),
       ID_ASSINATURA: idAssinatura,
       ID_SIGNATARIO: sign.ID_SIGNATARIO,
-      TIPO: String(tipo || 'EVIDENCIA').toUpperCase(),
+      TIPO: tipoUpper,
       NOME_ARQUIVO: nome,
       MIME_TYPE: mime,
       ARQUIVO_ID: arquivo.getId(),
@@ -549,7 +573,7 @@ function apiSignUploadEvidencia(idAssinatura, nonce, tipo, dataUrl, meta) {
       HASH_EVIDENCIA: hash,
       TAMANHO_BYTES: bytes.length,
       CRIADO_EM: new Date(),
-      META_JSON: AUT_SIGN_JSON_(meta || {}),
+      META_JSON: AUT_SIGN_JSON_(meta),
       RESTRICAO: 'DRIVE_RESTRITO_ADMIN'
     });
     AUT_SIGN_EVENTO_(idAssinatura, sign.ID_SIGNATARIO, 'EVIDENCIA_RECEBIDA', 'SIGNATARIO', {
@@ -585,12 +609,33 @@ function apiSignConcluir(idAssinatura, nonce, payload) {
     }
     payload = payload || {};
     var contexto = payload.contexto || {};
+    var consentimentos = payload.consentimentos || (contexto && contexto.consentimentos) || {};
+    var liveness = payload.liveness || (contexto && contexto.liveness) || {};
+    if (payload.aceite !== true ||
+        consentimentos.aceiteGeral !== true ||
+        consentimentos.contexto !== true ||
+        consentimentos.geolocalizacao !== true ||
+        consentimentos.cameraMicrofone !== true ||
+        consentimentos.verificacaoFaceMovimento !== true ||
+        consentimentos.driveRestrito !== true) {
+      AUT_SIGN_EVENTO_(idAssinatura, sign.ID_SIGNATARIO, 'ASSINATURA_RECUSADA_CONSENTIMENTO', 'SIGNATARIO', {
+        consentimentos: consentimentos,
+        aceite: payload.aceite === true
+      });
+      return { sucesso: false, msg: 'Consentimentos obrigatorios incompletos para concluir a assinatura.' };
+    }
+    if (!AUT_SIGN_LIVENESS_VALIDO_(liveness)) {
+      AUT_SIGN_EVENTO_(idAssinatura, sign.ID_SIGNATARIO, 'ASSINATURA_RECUSADA_LIVENESS', 'SIGNATARIO', {
+        liveness: liveness
+      });
+      return { sucesso: false, msg: 'Validacao de luz, rosto e movimentos obrigatoria antes de concluir.' };
+    }
     var geo = contexto.geolocation || {};
     var deviceHash = AUT_HASH_(AUT_SIGN_JSON_(contexto.device || {}));
     var ua = (contexto.device && contexto.device.userAgent) || '';
     var ip = contexto.ipPublico || '';
     var passkeyHash = payload.passkey ? AUT_HASH_(AUT_SIGN_JSON_(payload.passkey)) : '';
-    var risco = AUT_SIGN_ANALISAR_RISCO_(contexto, payload.passkey);
+    var risco = AUT_SIGN_ANALISAR_RISCO_(contexto, payload.passkey, liveness, consentimentos);
     var hashAssinatura = AUT_HASH_(AUT_SIGN_JSON_({
       idAssinatura: idAssinatura,
       idSignatario: sign.ID_SIGNATARIO,
@@ -598,6 +643,8 @@ function apiSignConcluir(idAssinatura, nonce, payload) {
       contexto: contexto,
       evidencias: AUT_SIGN_EVIDENCIAS_(idAssinatura, sign.ID_SIGNATARIO).map(function(e) { return e.HASH_EVIDENCIA; }),
       aceite: payload.aceite,
+      consentimentos: consentimentos,
+      liveness: liveness,
       passkeyHash: passkeyHash
     }));
     AUT_SIGN_SET_ROW_(AUT_SIGN_SHEET_('SIGNATARIOS'), sign.__rowNumber, {
@@ -618,7 +665,13 @@ function apiSignConcluir(idAssinatura, nonce, payload) {
     AUT_SIGN_EVENTO_(idAssinatura, sign.ID_SIGNATARIO, 'ASSINATURA_CONCLUIDA_SIGNATARIO', 'SIGNATARIO', {
       hashAssinatura: hashAssinatura,
       risco: risco,
-      aceite: payload.aceite === true
+      aceite: payload.aceite === true,
+      consentimentos: consentimentos,
+      liveness: {
+        aprovado: liveness.aprovado === true,
+        metodoFace: liveness.metodoFace || '',
+        registradoEm: liveness.registradoEm || ''
+      }
     });
     var todos = AUT_SIGN_SIGNATARIOS_(idAssinatura);
     var assinados = todos.filter(function(item) { return String(item.ID_SIGNATARIO || '') === String(sign.ID_SIGNATARIO || '') || String(item.STATUS || '') === 'ASSINADO'; }).length;
@@ -646,15 +699,32 @@ function apiSignConcluir(idAssinatura, nonce, payload) {
   }
 }
 
-function AUT_SIGN_ANALISAR_RISCO_(contexto, passkey) {
+function AUT_SIGN_ANALISAR_RISCO_(contexto, passkey, liveness, consentimentos) {
   contexto = contexto || {};
+  liveness = liveness || {};
+  consentimentos = consentimentos || {};
   var flags = [];
   if (!contexto.geolocation || contexto.geolocation.erro) flags.push('SEM_GEOLOCALIZACAO');
   if (!contexto.ipPublico) flags.push('SEM_IP_PUBLICO');
   if (!passkey) flags.push('SEM_PASSKEY');
+  if (liveness.aprovado !== true) flags.push('LIVENESS_NAO_APROVADO');
+  if (liveness.metodoFace && String(liveness.metodoFace).indexOf('heuristica') >= 0) flags.push('ROSTO_POR_HEURISTICA_LOCAL');
+  if (liveness.luz && liveness.luz.luzOk !== true) flags.push('LUZ_NAO_APROVADA');
+  if (liveness.rosto && liveness.rosto.ok !== true) flags.push('ROSTO_NAO_CONFIRMADO');
+  if (consentimentos.aceiteGeral !== true ||
+      consentimentos.contexto !== true ||
+      consentimentos.geolocalizacao !== true ||
+      consentimentos.cameraMicrofone !== true ||
+      consentimentos.verificacaoFaceMovimento !== true ||
+      consentimentos.driveRestrito !== true) {
+    flags.push('CONSENTIMENTO_INCOMPLETO');
+  }
   if (contexto.privacy && (contexto.privacy.vpn || contexto.privacy.proxy || contexto.privacy.tor)) flags.push('VPN_PROXY_TOR');
   if (contexto.device && contexto.device.webdriver) flags.push('AUTOMACAO_WEBDRIVER');
-  var nivel = flags.indexOf('VPN_PROXY_TOR') >= 0 || flags.indexOf('AUTOMACAO_WEBDRIVER') >= 0 ? 'ALTO' :
+  var nivel = flags.indexOf('VPN_PROXY_TOR') >= 0 ||
+    flags.indexOf('AUTOMACAO_WEBDRIVER') >= 0 ||
+    flags.indexOf('LIVENESS_NAO_APROVADO') >= 0 ||
+    flags.indexOf('CONSENTIMENTO_INCOMPLETO') >= 0 ? 'ALTO' :
     (flags.length ? 'ATENCAO' : 'BAIXO');
   return { nivel: nivel, flags: flags };
 }
@@ -680,7 +750,8 @@ function AUT_SIGN_FINALIZAR_ASSINATURA_(idAssinatura) {
         status: s.STATUS,
         assinadoEm: AUT_SIGN_DATA_ISO_(s.ASSINADO_EM),
         hashAssinatura: s.HASH_ASSINATURA,
-        passkeyStatus: s.PASSKEY_STATUS
+        passkeyStatus: s.PASSKEY_STATUS,
+        risco: AUT_SIGN_PARSE_JSON_(s.RISCO_JSON, {})
       };
     }),
     evidencias: evidencias.map(function(e) {
@@ -765,6 +836,7 @@ function AUT_SIGN_GERAR_PDF_ASSINADO_(assinatura, signatarios, hashManifesto, ma
   var idDocumentoAssinado = 'SIGDOC-' + String(idReal).replace(/[^A-Za-z0-9_-]/g, '') + '-' + hashManifesto.substring(0, 12).toUpperCase();
   var qrCodeDataUrl = AUT_QR_DATA_URL_V7_(manifestoUrl);
   var seals = signatarios.map(function(s) {
+    var riscoObj = AUT_SIGN_PARSE_JSON_(s.RISCO_JSON, {});
     return {
       idSignatario: s.ID_SIGNATARIO,
       papel: s.PAPEL,
@@ -775,6 +847,8 @@ function AUT_SIGN_GERAR_PDF_ASSINADO_(assinatura, signatarios, hashManifesto, ma
       hashAssinatura: s.HASH_ASSINATURA,
       passkeyStatus: s.PASSKEY_STATUS,
       ipHash: s.IP_HASH,
+      riscoNivel: riscoObj.nivel || '',
+      riscoFlags: (riscoObj.flags || []).join(', '),
       geo: s.GEO_LAT && s.GEO_LNG ? (s.GEO_LAT + ', ' + s.GEO_LNG + ' | precisao ' + (s.GEO_ACURACIA || '-') + 'm') : 'Nao informado'
     };
   });
