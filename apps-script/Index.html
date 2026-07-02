@@ -107,7 +107,8 @@
     .wizard-step-pane.active { display: block; animation: fadeIn 0.3s; }
     .wizard-step-pane h3 { font-size: 18px; margin-bottom: 20px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
     
-    .wizard-footer-nav { display: flex; gap: 15px; margin-top: 20px; }
+    .wizard-footer-nav { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+    .wizard-footer-nav .btn { width:auto; flex:1 1 170px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .dashboard-layout { flex-direction: column; } .sidebar { width: 100%; min-height: auto; } }
 
@@ -173,10 +174,15 @@ input[type="number"]::placeholder,
     .skeleton-line.short { width:45%; } .skeleton-line.medium { width:70%; }
     @keyframes skel { from{background-position:200% 0} to{background-position:-200% 0} }
     .btn-edit-laudo { background:#f59e0b !important; color:#111827 !important; }
+    .btn-draft { background:#475569 !important; color:#fff !important; }
     .btn-cache { background:#334155 !important; color:#fff !important; }
     .btn:disabled { opacity:.62; cursor:not-allowed; filter:saturate(.75); }
     .edit-banner { display:none; margin:0 0 16px; padding:12px 14px; border-radius:12px; border:1px solid #fbbf24; background:#fffbeb; color:#92400e; font-size:13px; font-weight:700; }
     .edit-banner.show { display:block; }
+    .status-chip { font-size:12px; padding:5px 10px; border-radius:12px; font-weight:800; display:inline-flex; align-items:center; gap:6px; }
+    .status-chip.registrado { color:var(--success); background:rgba(16,185,129,.1); }
+    .status-chip.rascunho { color:#92400e; background:#fffbeb; border:1px solid #fbbf24; }
+    .status-chip.substituido { color:#991b1b; background:#fee2e2; }
     .upload-speed-note { font-size:10px; color:var(--text-muted); text-align:center; line-height:1.35; }
     .sync-chip { font-size:12px; color:var(--success); background:rgba(16,185,129,.1); padding:5px 10px; border-radius:12px; }
 
@@ -436,6 +442,7 @@ input[type="number"]::placeholder,
 
             <div class="wizard-footer-nav">
               <button type="button" class="btn btn-secondary" id="btn-wizard-prev" onclick="navegarPasso(-1)" disabled>← Anterior</button>
+              <button type="button" class="btn btn-draft" id="btn-wizard-draft" onclick="salvarRascunhoVistoria()">Salvar rascunho</button>
               <button type="button" class="btn" id="btn-wizard-next" onclick="navegarPasso(1)">Avançar →</button>
               <button type="button" class="btn" id="btn-wizard-submit" style="background:var(--success); display:none;" onclick="enviarLaudoFinal()">✓ Trancar e Salvar Laudo</button>
             </div>
@@ -469,6 +476,7 @@ input[type="number"]::placeholder,
     var uploadsPendentes = 0;
     var editandoLaudoId = null;
     var editandoPayloadOriginal = null;
+    var editandoStatusLaudo = '';
     var payloadPendenteEdicaoDinamica = null;
     var usuarioAtual = null;
 
@@ -678,20 +686,26 @@ input[type="number"]::placeholder,
           var status = pick(laudo, ['status', 'STATUS']) || 'REGISTRADO';
           var pdfUrl = pick(laudo, ['pdfUrl', 'linkPdf', 'PDF_URL']);
           var disabledAction = editId ? '' : ' disabled title="ID do laudo nao encontrado"';
+          var statusNorm = String(status || '').toUpperCase();
+          var isDraft = statusNorm === 'RASCUNHO' || statusNorm.indexOf('RASCUNHO') >= 0;
+          var isSubstituido = statusNorm.indexOf('SUBSTITUIDO') >= 0;
+          var chipClass = isDraft ? 'rascunho' : (isSubstituido ? 'substituido' : 'registrado');
+          var chipLabel = isDraft ? 'Rascunho' : (isSubstituido ? 'Substituído' : 'Registrado');
+          var lockedAction = (disabledAction || isDraft) ? ' disabled title="' + (isDraft ? 'Finalize e tranque o rascunho antes de emitir PDF ou assinatura.' : 'ID do laudo nao encontrado') + '"' : '';
 
           html += '<div class="laudo-card"><div class="laudo-info">' +
             '<h4>Laudo: ' + sanitizar(numero) + '</h4>' +
-            '<p><b>Status:</b> ' + sanitizar(status) + '</p>' +
+            '<p><b>Status:</b> <span class="status-chip ' + chipClass + '">' + chipLabel + '</span></p>' +
             '<p><b>Data:</b> ' + sanitizar(data) + '</p>' +
             '<p><b>Vistoriador:</b> ' + sanitizar(responsavel) + '</p>' +
             '<p><b>Proprietário:</b> ' + sanitizar(proprietario) + ' | <b>Locatário:</b> ' + sanitizar(locatario) + '</p>' +
             '<p><b>Endereço:</b> ' + sanitizar(endereco) + '</p>' +
             '</div><div class="consulta-actions">' +
-            '<span style="font-size:12px; color:var(--success); background:rgba(16,185,129,.1); padding:5px 10px; border-radius:12px;">Sincronizado</span>' +
-            '<button type="button" class="btn btn-edit-laudo" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.abrirEdicaoLaudo(\'' + jsStr(editId) + '\')"' + disabledAction + '>Editar</button>' +
+            '<span class="sync-chip">Sincronizado</span>' +
+            '<button type="button" class="btn btn-edit-laudo" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.abrirEdicaoLaudo(\'' + jsStr(editId) + '\')"' + disabledAction + '>' + (isDraft ? 'Continuar rascunho' : 'Editar') + '</button>' +
             (pdfUrl ? '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px; background:#0f766e;" onclick="abrirPdfExistente(\'' + jsStr(pdfUrl) + '\')">Abrir PDF</button>' : '') +
-            '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.emitirLaudoPdf(\'' + jsStr(editId) + '\')"' + disabledAction + '>Emitir Laudo PDF</button>' +
-            '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px; background:#1e3a8a;" onclick="window.abrirAssinaturaLaudo(\'' + jsStr(editId) + '\')"' + disabledAction + '>Assinatura</button>' +
+            '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.emitirLaudoPdf(\'' + jsStr(editId) + '\')"' + lockedAction + '>Emitir Laudo PDF</button>' +
+            '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px; background:#1e3a8a;" onclick="window.abrirAssinaturaLaudo(\'' + jsStr(editId) + '\')"' + lockedAction + '>Assinatura</button>' +
             '</div></div>';
         });
         container.innerHTML = html;
@@ -867,6 +881,7 @@ input[type="number"]::placeholder,
           resetarFormularioVistoria();
           editandoLaudoId = res.idLaudo || idLaudo;
           editandoPayloadOriginal = res.payload || res.rowObj || {};
+          editandoStatusLaudo = res.status || (res.rascunho ? 'RASCUNHO' : 'REGISTRADO');
 
           preencherFormularioComPayload(editandoPayloadOriginal);
           inferirQuantidadesAmbientesEdicao(editandoPayloadOriginal);
@@ -886,7 +901,11 @@ input[type="number"]::placeholder,
 
           var banner = document.getElementById('edit-banner-laudo');
           if (banner) {
-            banner.innerHTML = 'Modo edição ativo: laudo <b>' + sanitizar(res.numeroLaudo || idLaudo) + '</b>. Ao finalizar, o sistema criará uma nova revisão com novo ID e novo hash.';
+            if (res.rascunho || editandoStatusLaudo === 'RASCUNHO') {
+              banner.innerHTML = 'Rascunho aberto: <b>' + sanitizar(res.numeroLaudo || idLaudo) + '</b>. Você pode salvar várias vezes e só gerar PDF/assinatura depois de trancar o laudo.';
+            } else {
+              banner.innerHTML = 'Modo edição ativo: laudo <b>' + sanitizar(res.numeroLaudo || idLaudo) + '</b>. Salvar rascunho cria uma cópia editável; trancar cria uma nova revisão com novo ID e novo hash.';
+            }
             banner.classList.add('show');
           }
 
@@ -1490,6 +1509,71 @@ input[type="number"]::placeholder,
       return '';
     }
 
+    function coletarPayloadLaudoDoFormulario(statusLaudo) {
+      var form = document.getElementById('form-vistoria-completo');
+      var formData = new FormData(form);
+      var laudoMap = {};
+      formData.forEach(function(value, key) { laudoMap[key] = value; });
+      laudoMap = limparPayloadLaudo(laudoMap);
+      laudoMap.__statusLaudo = statusLaudo || 'REGISTRADO';
+      laudoMap.__rascunho = statusLaudo === 'RASCUNHO' ? 'SIM' : 'NAO';
+      if (editandoLaudoId) {
+        laudoMap.__modoEdicao = 'SIM';
+        laudoMap.__idLaudoEdicao = editandoLaudoId;
+      }
+      return laudoMap;
+    }
+
+    function salvarRascunhoVistoria() {
+      if (uploadsPendentes > 0) {
+        mostrarToast("Aguarde o envio de todas as fotos terminar antes de salvar o rascunho.", "var(--danger)");
+        return;
+      }
+      var laudoMap = coletarPayloadLaudoDoFormulario('RASCUNHO');
+      var erroVideos = validarLinksVideosLaudo(laudoMap);
+      if (erroVideos) {
+        mostrarToast(erroVideos, 'var(--danger)');
+        return;
+      }
+      var btnDraft = document.getElementById('btn-wizard-draft');
+      if (btnDraft) {
+        btnDraft.disabled = true;
+        btnDraft.innerText = 'Salvando...';
+      }
+      mostrarToast("Salvando rascunho editável...", "var(--warning)");
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (btnDraft) {
+            btnDraft.disabled = false;
+            btnDraft.innerText = 'Salvar rascunho';
+          }
+          if (res && res.sucesso) {
+            editandoLaudoId = res.idLaudo || res.id || editandoLaudoId;
+            editandoStatusLaudo = 'RASCUNHO';
+            cacheDelLocal('LAUDOS_V3');
+            var numeroLaudo = document.getElementById('etapa1_numeroLaudo');
+            if (numeroLaudo && res.numeroLaudo) numeroLaudo.value = res.numeroLaudo;
+            var banner = document.getElementById('edit-banner-laudo');
+            if (banner) {
+              banner.innerHTML = 'Rascunho salvo: <b>' + sanitizar(res.numeroLaudo || editandoLaudoId) + '</b>. Continue editando ou finalize quando estiver completo.';
+              banner.classList.add('show');
+            }
+            carregarMeusLaudosDashboard(true);
+            mostrarToast(res.msg || 'Rascunho salvo.', "var(--success)");
+          } else {
+            mostrarToast((res && res.msg) ? res.msg : 'Não foi possível salvar o rascunho.', "var(--danger)");
+          }
+        })
+        .withFailureHandler(function(err) {
+          if (btnDraft) {
+            btnDraft.disabled = false;
+            btnDraft.innerText = 'Salvar rascunho';
+          }
+          mostrarToast('Erro no servidor ao salvar rascunho: ' + (err && err.message ? err.message : err), 'var(--danger)');
+        })
+        .apiSalvarRascunhoVistoria(editandoLaudoId || '', laudoMap);
+    }
+
     // --- ENVIAR PARA A PLANILHA ---
     function enviarLaudoFinal() {
       if (uploadsPendentes > 0) {
@@ -1503,23 +1587,14 @@ input[type="number"]::placeholder,
         if (!camposObrigatorios[i].checkValidity()) { camposObrigatorios[i].reportValidity(); return; }
       }
 
-      var form = document.getElementById('form-vistoria-completo');
-      var formData = new FormData(form);
-      var laudoMap = {};
-      formData.forEach(function(value, key) { laudoMap[key] = value; });
-      laudoMap = limparPayloadLaudo(laudoMap);
+      var laudoMap = coletarPayloadLaudoDoFormulario('REGISTRADO');
       var erroVideos = validarLinksVideosLaudo(laudoMap);
       if (erroVideos) {
         mostrarToast(erroVideos, 'var(--danger)');
         return;
       }
 
-      if (editandoLaudoId) {
-        laudoMap.__modoEdicao = 'SIM';
-        laudoMap.__idLaudoEdicao = editandoLaudoId;
-      }
-
-      mostrarToast(editandoLaudoId ? "Salvando nova revisão auditável..." : "Salvando Vistoria e Arquivando JSON...", "var(--warning)");
+      mostrarToast(editandoLaudoId ? "Finalizando laudo/revisão auditável..." : "Salvando Vistoria e Arquivando JSON...", "var(--warning)");
       document.getElementById('btn-wizard-submit').disabled = true;
 
       var runner = google.script.run
@@ -1529,6 +1604,7 @@ input[type="number"]::placeholder,
             cacheDelLocal('LAUDOS_V3');
             editandoLaudoId = null;
             editandoPayloadOriginal = null;
+            editandoStatusLaudo = '';
             var banner = document.getElementById('edit-banner-laudo');
             if (banner) banner.classList.remove('show');
             document.getElementById('form-vistoria-completo').style.display = 'none';
@@ -1554,6 +1630,7 @@ input[type="number"]::placeholder,
     function resetarFormularioVistoria() {
       editandoLaudoId = null;
       editandoPayloadOriginal = null;
+      editandoStatusLaudo = '';
       payloadPendenteEdicaoDinamica = null;
       var banner = document.getElementById('edit-banner-laudo');
       if (banner) banner.classList.remove('show');
@@ -1962,6 +2039,7 @@ input[type="number"]::placeholder,
     window.fazerLogin = fazerLogin;
     window.trocarFormulario = trocarFormulario;
     window.finalizarCadastro = finalizarCadastro;
+    window.salvarRascunhoVistoria = salvarRascunhoVistoria;
     window.emitirLaudoPdf = emitirLaudoPdf;
     window.abrirPdfExistente = abrirPdfExistente;
     window.abrirAssinaturaLaudo = abrirAssinaturaLaudo;
