@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificar AUTENTIKO Sign</title>
+  <style>
+    :root {
+      --bg: #f3f7fb;
+      --card: #ffffff;
+      --line: #d8e3ef;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --ok: #047857;
+      --bad: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; }
+    main { max-width: 860px; margin: 32px auto; padding: 0 14px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; box-shadow: 0 16px 32px rgba(15,23,42,.08); }
+    .brand { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    h1 { margin: 8px 0 10px; font-size: 28px; }
+    p { color: var(--muted); line-height: 1.5; }
+    label { display: block; margin: 12px 0 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #334155; }
+    input { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 15px; }
+    button { border: 0; background: var(--primary); color: #fff; border-radius: 8px; padding: 12px 16px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+    .result { margin-top: 18px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: none; }
+    .status { padding: 16px; font-size: 24px; font-weight: 800; }
+    .status.ok { color: var(--ok); background: #ecfdf5; }
+    .status.bad { color: var(--bad); background: #fef2f2; }
+    .grid { display: grid; grid-template-columns: 220px 1fr; border-top: 1px solid var(--line); }
+    .grid div { padding: 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); word-break: break-word; }
+    .grid .k { background: #f8fafc; font-weight: 700; color: #334155; }
+    .hash { font-family: Consolas, monospace; font-size: 12px; }
+    .small { font-size: 12px; }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .grid .k { border-bottom: 0; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <div class="brand">AUTENTIKO-OK CHECK | Palmer Imoveis</div>
+      <h1>Verificador publico de assinatura</h1>
+      <p>Consulte a validade de um laudo assinado pelo AUTENTIKO Sign usando o ID e o hash do manifesto ou do PDF assinado.</p>
+      <label for="doc-id">ID da assinatura</label>
+      <input id="doc-id" placeholder="SIGN-...">
+      <label for="doc-hash">Hash</label>
+      <input id="doc-hash" placeholder="Hash do manifesto ou do PDF">
+      <button onclick="verificar()">Verificar autenticidade</button>
+      <div id="msg" class="small"></div>
+
+      <div id="resultado" class="result">
+        <div id="status" class="status">CONSULTA</div>
+        <div class="grid" id="grid"></div>
+      </div>
+      <p class="small">Esta pagina publica nao exibe CPF, e-mail, IP completo, video ou evidencias sensiveis. Esses dados ficam restritos ao painel administrativo.</p>
+    </section>
+  </main>
+
+  <script>
+    var AUT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme/exec';
+    function qs(name) {
+      return new URLSearchParams(location.search).get(name) || '';
+    }
+    function escapeHtml(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+    function render(res) {
+      document.getElementById('resultado').style.display = 'block';
+      var status = res && res.status ? res.status : 'NAO_CONFIRMADO';
+      var ok = status === 'AUTENTICO';
+      var statusEl = document.getElementById('status');
+      statusEl.className = 'status ' + (ok ? 'ok' : 'bad');
+      statusEl.textContent = status;
+      document.getElementById('grid').innerHTML =
+        '<div class="k">ID assinatura</div><div>' + escapeHtml(res.idAssinatura || '') + '</div>' +
+        '<div class="k">Laudo</div><div>' + escapeHtml(res.numeroLaudo || res.idLaudo || '') + '</div>' +
+        '<div class="k">Documento assinado</div><div>' + escapeHtml(res.idDocumentoAssinado || '') + '</div>' +
+        '<div class="k">Concluido em</div><div>' + escapeHtml(res.concluidoEm || '') + '</div>' +
+        '<div class="k">Signatarios</div><div>' + escapeHtml(res.qtdAssinados || '0') + ' de ' + escapeHtml(res.qtdSignatarios || '0') + '</div>' +
+        '<div class="k">Hash manifesto</div><div class="hash">' + escapeHtml(res.hashManifesto || '') + '</div>' +
+        '<div class="k">Hash PDF assinado</div><div class="hash">' + escapeHtml(res.hashPdfAssinado || '') + '</div>';
+      document.getElementById('msg').textContent = res.msg || '';
+    }
+    function verificar() {
+      var id = document.getElementById('doc-id').value.trim();
+      var hash = document.getElementById('doc-hash').value.trim();
+      if (!id) {
+        document.getElementById('msg').textContent = 'Informe o ID da assinatura.';
+        return;
+      }
+      var cb = 'autSignVerify_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
+      window[cb] = function(res) {
+        try { render(res || {}); } finally {
+          delete window[cb];
+          var old = document.getElementById(cb);
+          if (old) old.remove();
+        }
+      };
+      var s = document.createElement('script');
+      s.id = cb;
+      s.src = AUT_APPS_SCRIPT_URL + '?api=verifySignature&id=' + encodeURIComponent(id) + '&hash=' + encodeURIComponent(hash) + '&callback=' + encodeURIComponent(cb);
+      s.onerror = function() { document.getElementById('msg').textContent = 'Nao foi possivel consultar o endpoint publico.'; };
+      document.body.appendChild(s);
+    }
+    window.addEventListener('load', function() {
+      document.getElementById('doc-id').value = qs('id');
+      document.getElementById('doc-hash').value = qs('hash');
+      if (qs('id')) verificar();
+    });
+  </script>
+</body>
+</html>
