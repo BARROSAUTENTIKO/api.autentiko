@@ -6,8 +6,8 @@ Esta pasta guarda a versao publicada do sistema administrativo AUTENTIKO-OK CHEC
 
 - Apps Script project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
 - Web app principal: https://script.google.com/macros/s/AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme/exec
-- Versao publicada do Apps Script: `41`
-- Descricao da publicacao: `AUTENTIKO Sign V1 - verificador GitHub Pages 2026-07-02`
+- Versao publicada do Apps Script: `42`
+- Descricao da publicacao: `AUTENTIKO Sign V1 completo - GitHub Pages e fonte 2026-07-02`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 ## Arquivos principais
