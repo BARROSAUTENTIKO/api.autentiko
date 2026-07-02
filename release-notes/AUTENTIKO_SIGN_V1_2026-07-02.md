@@ -6,16 +6,18 @@
 - Rota publica de assinatura por `?sign=sessionId:nonce`.
 - Rota publica de verificacao por `?verify=id` e endpoint JSONP `?api=verifySignature`.
 - GitHub Pages publico em `https://barrosautentiko.github.io/api.autentiko/verificar/`.
-- Apps Script publicado no deployment existente, versao `44`.
+- Apps Script publicado no deployment existente, versao `45`.
 
-## Revisao de camera/liveness @44
+## Revisao de camera/liveness @45
 
-- Consentimentos separados antes da coleta de contexto, geolocalizacao, camera/microfone, verificacao de rosto/movimento e armazenamento no Drive restrito.
+- Consentimentos separados antes da coleta de contexto, geolocalizacao, camera/microfone, verificacao de detector facial/movimento e armazenamento no Drive restrito.
 - Token validado nao coleta dados tecnicos automaticamente; a coleta acontece apenas apos acao e aceite do signatario.
 - Camera/microfone so sao solicitados apos consentimento expresso.
-- Validacao local de luz, rosto e movimentos guiados antes de liberar gravacao de evidencia.
-- Uso de `FaceDetector` quando suportado pelo navegador; fallback registrado como heuristica local, sem promessa de biometria certificada.
-- Backend rejeita video e conclusao sem liveness aprovado, luz aprovada, rosto confirmado, tres fases de movimento e consentimentos completos.
+- A tela carrega o detector facial MediaPipe sob demanda e usa `FaceDetector` nativo como fallback quando disponivel.
+- A heuristica local de luz/contraste deixou de aprovar rosto sozinha; ela fica apenas como diagnostico.
+- Validacao de luz, rosto humano por detector real e movimentos guiados antes de liberar gravacao de evidencia.
+- Cada fase do desafio confirma que o rosto continua detectado e que a luz permanece adequada.
+- Backend rejeita video e conclusao sem liveness aprovado, detector facial forte, luz aprovada, rosto confirmado, tres fases de movimento e consentimentos completos.
 - Manifesto tecnico inclui risco por signatario, e o selo do PDF exibe resumo de validacao sem expor video, IP completo ou evidencias sensiveis.
 
 ## Revisao de seguranca @43
@@ -81,7 +83,7 @@
 
 - Checagem de sintaxe do JavaScript do `Sign.html` com Node.js.
 - `clasp push --force` concluiu com os 8 arquivos principais.
-- Deployment existente atualizado para `@44`.
+- Deployment existente atualizado para `@45`.
 - Endpoint JSONP publico respondeu HTTP 200.
 - GitHub Pages respondeu HTTP 200.
 - Fonte completo publicado em `apps-script/` no GitHub.
