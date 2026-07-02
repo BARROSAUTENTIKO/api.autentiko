@@ -1021,6 +1021,7 @@
             <div class="selo-linha"><strong>ID:</strong> <?= txt(ass.idSignatario) ?></div>
             <div class="selo-linha"><strong>Assinado em:</strong> <?= txt(ass.assinadoEm) ?></div>
             <div class="selo-linha"><strong>Passkey/WebAuthn:</strong> <?= txt(ass.passkeyStatus || 'Nao registrada') ?></div>
+            <div class="selo-linha"><strong>Validacao tecnica:</strong> <?= txt(ass.riscoNivel || 'Registrada') ?><? if (ass.riscoFlags) { ?> | <?= txt(ass.riscoFlags) ?><? } ?></div>
             <div class="selo-linha"><strong>Geolocalizacao:</strong> <?= txt(ass.geo || 'Nao informada') ?></div>
             <div class="selo-linha"><strong>Hash de IP:</strong> <?= txt(ass.ipHash || '') ?></div>
             <div class="selo-hash"><strong>Hash da assinatura:</strong> <?= txt(ass.hashAssinatura || '') ?></div>
