@@ -42,3 +42,15 @@
 - Salvar novo laudo.
 - Conferir se a listagem atualiza após invalidar cache.
 - Editar laudo e conferir se o painel reflete alteração.
+
+## 7. Assinatura eletrônica / câmera
+- Criar sessão de assinatura e confirmar que o admin não vê token nem link sensível do signatário.
+- Abrir link público, validar token de e-mail e marcar consentimentos.
+- Confirmar que o sistema não coleta contexto, geolocalização, câmera ou vídeo antes das autorizações.
+- Confirmar que a câmera solicita permissão do navegador.
+- Testar ambiente escuro: liveness deve reprovar e registrar evento.
+- Testar sem rosto humano: liveness deve reprovar e registrar evento.
+- Testar navegador/conexão sem MediaPipe e sem `FaceDetector`: assinatura deve ser bloqueada.
+- Testar movimentos insuficientes: vídeo não deve ser enviado.
+- Testar fluxo aprovado: foto e vídeo devem ir para Drive restrito, com hash na planilha.
+- Concluir assinatura e verificar selo no PDF, manifesto e QR Code.
