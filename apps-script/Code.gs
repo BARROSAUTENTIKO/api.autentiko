@@ -165,7 +165,7 @@ function garantirUsuarioAdmin_(ss) {
     if (String(data[i][4] || '').toLowerCase() === 'admin') return;
   }
 
-  // Hash SHA-256 de admin123
+  // Hash SHA-256 da chave mestra padrao.
   sh.appendRow([
     'Administrador Mestre',
     '',
@@ -595,7 +595,7 @@ function aprovarUsuarioViaPlanilha() {
 
 function validarChaveMestra(chave) {
   try {
-    // Hash padrão: admin123. Se quiser, salve CHAVE_MESTRA nas Propriedades do Script.
+    // Hash padrao da chave mestra. Em producao, salve CHAVE_MESTRA nas Propriedades do Script.
     var props = PropertiesService.getScriptProperties();
     var chaveSalva = props.getProperty('CHAVE_MESTRA') || '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
 
