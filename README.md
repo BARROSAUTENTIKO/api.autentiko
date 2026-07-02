@@ -1,10 +1,49 @@
-# AUTENTIKO Sign Public Verifier
+# AUTENTIKO-OK CHECK + AUTENTIKO Sign
 
-Repositorio publico de verificacao do AUTENTIKO-OK CHECK.
+Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, com modulo AUTENTIKO Sign integrado.
 
-- Pagina principal: `/verificar/`
-- Endpoint de validacao: Google Apps Script publico do AUTENTIKO Sign
-- Dados publicos: ID, status, hash do manifesto, hash do PDF assinado e metadados minimos
-- Dados restritos: CPF, e-mail, IP completo, videos, fotos e evidencias administrativas
+## Links publicados
 
-Este verificador nao substitui certificacao ICP-Brasil, e-Notariado ou analise juridica. Ele fornece conferencia publica de integridade por ID/hash e trilha de auditoria do sistema.
+- Sistema Apps Script: https://script.google.com/macros/s/AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme/exec
+- Verificador publico GitHub Pages: https://barrosautentiko.github.io/api.autentiko/verificar/
+- Repositorio: https://github.com/BARROSAUTENTIKO/api.autentiko
+
+## Estrutura
+
+- `apps-script/`: fonte completo publicado no Google Apps Script.
+- `verificar/`: pagina estatica do GitHub Pages para consulta publica de autenticidade.
+- `docs/`: checklist, instrucoes de manutencao e metadados.
+- `release-notes/`: notas da versao publicada.
+
+## Apps Script
+
+- Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
+- Versao publicada: `41`
+- Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
+
+Arquivos principais:
+
+- `apps-script/Code.gs`
+- `apps-script/ZZZ_V6_Final.gs`
+- `apps-script/ZZZ_Z_AUTENTIKO_SIGN.gs`
+- `apps-script/Index.html`
+- `apps-script/Sign.html`
+- `apps-script/modelo.html`
+- `apps-script/appsscript.json`
+
+## Verificacao publica
+
+A pagina em `verificar/` consulta o endpoint publico do Apps Script e mostra somente dados minimos:
+
+- ID da assinatura
+- status de autenticidade
+- laudo vinculado
+- hash do manifesto
+- hash do PDF assinado
+- datas e contadores de signatarios
+
+Dados sensiveis como CPF, e-mail, IP completo, foto, video e evidencias administrativas nao sao publicados no GitHub.
+
+## Observacao juridica
+
+A v1 cria assinatura eletronica com prova de autoria, consentimento, trilha de auditoria, hash encadeado, manifesto e verificacao publica. Ela nao substitui ICP-Brasil, gov.br oficial ou e-Notariado quando a lei exigir assinatura qualificada ou ato notarial.
