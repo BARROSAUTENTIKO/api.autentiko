@@ -1,0 +1,21 @@
+{
+  "generated_for": "Codex",
+  "project": "AUTENTIKO OK CHECK / Palmer Imóveis - Vistorias",
+  "files": [
+    "CHECKLIST_TESTES.md",
+    "Code.gs",
+    "INSTRUCOES_PARA_CODEX.md",
+    "Index.html",
+    "README.md",
+    "REFERENCIA_MODELO_COLADO.html",
+    "appsscript.json",
+    "modelo.html"
+  ],
+  "source_sizes_bytes": {
+    "Code.gs": 85980,
+    "Index.html": 85516,
+    "modelo.html": 13013
+  },
+  "required_pdf_template_name": "modelo.html",
+  "official_palmer_logo": "https://i.postimg.cc/6QDd7672/LOGO-MARCA.png"
+}
