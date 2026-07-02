@@ -6,7 +6,7 @@
 - Rota publica de assinatura por `?sign=sessionId:nonce`.
 - Rota publica de verificacao por `?verify=id` e endpoint JSONP `?api=verifySignature`.
 - GitHub Pages publico em `https://barrosautentiko.github.io/api.autentiko/verificar/`.
-- Apps Script publicado no deployment existente, versao `41`.
+- Apps Script publicado no deployment existente, versao `42`.
 
 ## Abas adicionadas na planilha
 
@@ -63,3 +63,4 @@
 - Web app principal respondeu HTTP 200.
 - Endpoint JSONP publico respondeu com status controlado para registro inexistente.
 - GitHub Pages respondeu HTTP 200 apos configurar Pages em `main`/root.
+- Fonte completo publicado em `apps-script/` no GitHub.
