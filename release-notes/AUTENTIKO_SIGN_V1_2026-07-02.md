@@ -6,7 +6,15 @@
 - Rota publica de assinatura por `?sign=sessionId:nonce`.
 - Rota publica de verificacao por `?verify=id` e endpoint JSONP `?api=verifySignature`.
 - GitHub Pages publico em `https://barrosautentiko.github.io/api.autentiko/verificar/`.
-- Apps Script publicado no deployment existente, versao `42`.
+- Apps Script publicado no deployment existente, versao `43`.
+
+## Revisao de seguranca @43
+
+- O painel administrativo nao exibe mais token OTP nem link unico do signatario apos criar a sessao.
+- O convite continua sendo enviado por e-mail ao signatario.
+- O OTP agora bloqueia apos excesso de tentativas incorretas e registra evento auditavel.
+- A validacao de chave mestra prioriza `CHAVE_MESTRA_HASH` em `PropertiesService`.
+- O fonte publico nao contem mais o hash literal da chave padrao nem texto puro da chave.
 
 ## Abas adicionadas na planilha
 
@@ -60,7 +68,8 @@
 
 ## Verificacoes realizadas
 
-- Web app principal respondeu HTTP 200.
-- Endpoint JSONP publico respondeu com status controlado para registro inexistente.
-- GitHub Pages respondeu HTTP 200 apos configurar Pages em `main`/root.
+- `clasp push --force` concluiu com os 8 arquivos principais.
+- Deployment existente atualizado para `@43`.
+- Endpoint JSONP publico respondeu HTTP 200.
+- GitHub Pages respondeu HTTP 200.
 - Fonte completo publicado em `apps-script/` no GitHub.
