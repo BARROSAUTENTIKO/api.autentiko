@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema Administrativo & Vistorias | Palmer Imóveis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================
+       VARIAVEIS DE TEMA (OPTIMUS UI DARK)
+       ========================================== */
+    :root {
+      --bg-color: #f3f7fb; --card-bg: #ffffff; --border-color: #d9e3f0;
+      --primary: #2563eb; --primary-hover: #1d4ed8;
+      --text-main: #0f172a; --text-muted: #64748b;
+      --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --input-bg: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); overflow-x: hidden; }
+
+    /* --- SPA NAV SYSTEM --- */
+    .view-container { display: none; min-height: 100vh; width: 100%; }
+    .view-container.active { display: flex; justify-content: center; align-items: center; animation: fadeIn 0.4s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* --- COMPONENTES LOGIN --- */
+    .card-login { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 40px 32px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(15,23,42,0.10); margin: 20px; }
+    .logo-container { text-align: center; margin-bottom: 20px; }
+    .logo-container img { width: 85px; height: 85px; border-radius: 22px; object-fit: cover; box-shadow: 0 8px 16px rgba(0,0,0,0.3); background: white; }
+    
+    /* --- INPUTS & FORMS --- */
+    .input-group { margin-bottom: 16px; text-align: left; position: relative; }
+    .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .input-group input, .input-group select, .input-group textarea { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; }
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: var(--primary); }
+    .input-group input[readonly] { background: rgba(255,255,255,0.05); color: var(--text-muted); cursor: not-allowed; }
+    .checkbox-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; color: var(--text-main); cursor: pointer; }
+    .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
+    /* --- CATEGORIAS SANFONADAS (ACORDEÃO ETAPA 5) --- */
+    .cat-details { margin-bottom: 8px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+    .cat-summary { background: var(--input-bg); padding: 12px 15px; font-weight: 600; color: var(--primary); cursor: pointer; list-style: none; user-select: none; transition: background 0.2s; }
+    .cat-summary:hover { background: rgba(99, 102, 241, 0.1); }
+    .cat-content { padding: 15px; background: var(--card-bg); border-top: 1px solid var(--border-color); }
+
+    /* --- COMPONENTE CUSTOMIZADO: SMART MULTI-SELECT (ANAMNESE) --- */
+    .smart-select-container { position: relative; width: 100%; }
+    .smart-tags-area { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .smart-tag { background: var(--primary); color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .smart-tag span { cursor: pointer; font-weight: bold; }
+    .smart-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 25px rgba(15,23,42,0.15); padding: 8px; }
+    .smart-dropdown.open { display: block; animation: fadeIn 0.2s; }
+    .smart-option { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 13px; }
+    .smart-option:hover { background: var(--input-bg); }
+    .smart-option input { width: 16px; height: 16px; margin:0; cursor: pointer; accent-color: var(--primary); }
+    .smart-cat-badge { font-size: 10px; background: rgba(99, 102, 241, 0.15); color: var(--primary); padding: 3px 6px; border-radius: 4px; margin-right: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* --- BOTOES --- */
+    .btn { width: 100%; background-color: var(--primary); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    .btn-secondary { background: #e2e8f0; color:#0f172a; margin-top: 10px; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-link { background: none; color: var(--text-muted); border: none; width: 100%; margin-top: 15px; cursor: pointer; font-size: 13px; }
+
+    /* --- LAYOUT INTERNO DASHBOARD --- */
+    .dashboard-layout { display: flex; width: 100%; min-height: 100vh; }
+    .sidebar { width: 270px; background: var(--card-bg); border-right: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; z-index:10; }
+    .sidebar-logo { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+    .sidebar-logo img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; background: white; }
+    .nav-btn { background: transparent; color: var(--text-muted); border: none; padding: 12px 15px; text-align: left; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; margin-bottom: 6px; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+    .nav-btn:hover, .nav-btn.active { background: var(--input-bg); color: var(--text-main); }
+    .nav-btn.config { border: 1px solid rgba(239, 68, 68, 0.15); color: #fca5a5; }
+
+    .main-content { flex: 1; padding: 35px; overflow-y: auto; position:relative; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+    .user-profile { font-size: 13px; color: var(--text-muted); background: var(--card-bg); padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-color); }
+
+    .dash-view { display: none; animation: fadeIn 0.3s; }
+    .dash-view.active { display: block; }
+
+    /* --- CARDS DE LISTAGEM DE LAUDOS (DASHBOARD INÍCIO) --- */
+    .laudo-card { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+    .laudo-card:hover { border-color: var(--primary); }
+    .laudo-info h4 { font-size: 16px; margin-bottom: 5px; color: var(--text-main); }
+    .laudo-info p { font-size: 13px; color: var(--text-muted); margin-bottom: 3px; }
+    .assinatura-panel-grid { display: grid; grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .assinatura-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px; margin-bottom: 14px; }
+    .assinatura-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; background: var(--input-bg); }
+    .assinatura-card { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+    .assinatura-card h4 { margin-bottom: 6px; color: var(--text-main); }
+    .assinatura-card p { font-size: 12px; color: var(--text-muted); margin: 3px 0; }
+    .assinatura-status { display:inline-block; font-size:11px; font-weight:700; padding:4px 8px; border-radius:999px; background:#e2e8f0; color:#0f172a; }
+    .assinatura-status.CONCLUIDA { background:#dcfce7; color:#166534; }
+    .assinatura-status.AGUARDANDO, .assinatura-status.PARCIAL, .assinatura-status.FINALIZANDO { background:#fef3c7; color:#92400e; }
+    .assinatura-status.CANCELADA { background:#fee2e2; color:#991b1b; }
+    .assinatura-links { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .assinatura-links .btn { width:auto; padding:8px 10px; font-size:12px; }
+    .assinatura-mini { font-size:11px; color:var(--text-muted); margin-top:8px; }
+    @media (max-width: 920px) { .assinatura-panel-grid { grid-template-columns: 1fr; } .assinatura-row { grid-template-columns: 1fr; } }
+
+    /* --- WIZARD DE VISTORIAS --- */
+    .wizard-header { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 25px; }
+    .progress-container { background: var(--input-bg); height: 8px; border-radius: 4px; width: 100%; overflow: hidden; margin-top: 12px; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), #a855f7); width: 0%; transition: width 0.3s ease; }
+    
+    .wizard-step-pane { display: none; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; margin-bottom: 20px; position:relative; }
+    .wizard-step-pane.active { display: block; animation: fadeIn 0.3s; }
+    .wizard-step-pane h3 { font-size: 18px; margin-bottom: 20px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+    
+    .wizard-footer-nav { display: flex; gap: 15px; margin-top: 20px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .dashboard-layout { flex-direction: column; } .sidebar { width: 100%; min-height: auto; } }
+
+    /* --- GLOBAL TOAST & UTILS --- */
+    #toast { position: fixed; top: 24px; right: 24px; background: #0f172a; border-left: 4px solid var(--primary); color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 25px rgba(15,23,42,0.15); transform: translateX(150%); transition: transform 0.3s; z-index: 99999; font-size: 14px; font-weight: 500; }
+    #toast.show { transform: translateX(0); }
+    .user-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .config-section { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+    
+    .file-input-wrapper { display: flex; flex-direction: column; gap: 10px; }
+    .file-input-wrapper input[type="file"] { background: transparent; border: 1px dashed var(--border-color); padding: 20px; text-align: center; cursor: pointer; }
+    .foto-preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .foto-preview-box { position: relative; width: 120px; height: 152px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background:#fff; }
+    .foto-preview-box img { width: 100%; height: 100%; object-fit: contain; background:#ffffff; }
+    .foto-loader { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; color: white; font-size: 10px; font-weight: bold; }
+    .foto-delete-btn { position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:50%; border:0; background:rgba(239,68,68,.95); color:#fff; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.25); z-index:5; }
+    .foto-delete-btn:hover { background:#dc2626; transform:scale(1.05); }
+    .foto-ok-badge { position:absolute; bottom:4px; left:4px; right:4px; background:rgba(16,185,129,.95); color:#fff; font-size:10px; padding:3px 5px; border-radius:8px; text-align:center; font-weight:700; }
+    .consulta-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+    /* CORREÇÃO — CAMPOS DE QUANTIDADE DA ETAPA 4 */
+input[type="number"],
+input[type="text"].qtd,
+.qtd,
+.quantidade,
+.quantidade-input,
+.item-quantidade,
+.campo-quantidade {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* Corrige quando o campo estiver desabilitado */
+input[type="number"]:disabled,
+.qtd:disabled,
+.quantidade:disabled,
+.quantidade-input:disabled,
+.item-quantidade:disabled,
+.campo-quantidade:disabled {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #f8fafc !important;
+  opacity: 1 !important;
+}
+
+/* Corrige número que aparece como placeholder */
+input[type="number"]::placeholder,
+.qtd::placeholder,
+.quantidade::placeholder,
+.quantidade-input::placeholder {
+  color: #475569 !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
+
+    /* --- PATCH OPTIMUS UI: CACHE, BOTÃO EDITAR E SKELETON --- */
+    .cache-note { font-size:11px; color:var(--text-muted); margin:6px 0 12px; }
+    .skeleton-card { background:var(--input-bg); border:1px solid var(--border-color); border-radius:12px; padding:18px; margin-bottom:12px; overflow:hidden; position:relative; }
+    .skeleton-line { height:12px; border-radius:999px; background:linear-gradient(90deg,#e2e8f0,#f8fafc,#e2e8f0); background-size:200% 100%; animation:skel 1.1s linear infinite; margin:8px 0; }
+    .skeleton-line.short { width:45%; } .skeleton-line.medium { width:70%; }
+    @keyframes skel { from{background-position:200% 0} to{background-position:-200% 0} }
+    .btn-edit-laudo { background:#f59e0b !important; color:#111827 !important; }
+    .btn-cache { background:#334155 !important; color:#fff !important; }
+    .btn:disabled { opacity:.62; cursor:not-allowed; filter:saturate(.75); }
+    .edit-banner { display:none; margin:0 0 16px; padding:12px 14px; border-radius:12px; border:1px solid #fbbf24; background:#fffbeb; color:#92400e; font-size:13px; font-weight:700; }
+    .edit-banner.show { display:block; }
+    .upload-speed-note { font-size:10px; color:var(--text-muted); text-align:center; line-height:1.35; }
+    .sync-chip { font-size:12px; color:var(--success); background:rgba(16,185,129,.1); padding:5px 10px; border-radius:12px; }
+
+  </style>
+</head>
+<body onclick="fecharTodosDropdowns(event)">
+
+  <div id="toast"></div>
+
+  <div id="route-auth" class="view-container active">
+    <div id="view-login" class="card-login" style="display: block;">
+      <div class="logo-container"><img id="ui-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1NiIgZmlsbD0iIzI1NjNlYiIvPjxjaXJjbGUgY3g9IjEyOCIgY3k9IjEyOCIgcj0iODIiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuMTQiLz48dGV4dCB4PSIxMjgiIHk9IjE0NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNjQiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiPkE8L3RleHQ+PHRleHQgeD0iMTI4IiB5PSIxNzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZGJlYWZlIj5PSzwvdGV4dD48L3N2Zz4=" alt="Logo"></div>
+      <h2 style="text-align:center; font-size:24px; margin-bottom:4px;" id="ui-nome-sistema">Carregando...</h2>
+      <p style="text-align:center; color:var(--text-muted); font-size:13px; margin-bottom:24px;">Gestão Administrativa & Laudos</p>
+      
+      <div class="input-group"><label>Usuário</label><input type="text" id="log-user" placeholder="Ex: admin"></div>
+      <div class="input-group"><label>Senha</label><input type="password" id="log-pass" placeholder="••••••••"></div>
+      <button class="btn" id="btn-login" onclick="fazerLogin()">Acessar Sistema</button>
+      <button class="btn-link" onclick="trocarFormulario('view-registro')">Meu primeiro acesso (Criar conta)</button>
+    </div>
+
+    <div id="view-registro" class="card-login" style="display: none;">
+      <h2 style="text-align:center; font-size:22px; margin-bottom:15px;">Criar Conta</h2>
+      <div class="input-group"><label>Nome Completo</label><input type="text" id="reg-nome" required></div>
+      <div class="input-group"><label>Data de Nascimento</label><input type="date" id="reg-nascimento" required></div>
+      <div class="input-group"><label>Contato / Whatsapp</label><input type="text" id="reg-contato" oninput="mascaraTelefone(this)" placeholder="(00) 00000-0000" required></div>
+      <div class="input-group"><label>E-mail</label><input type="email" id="reg-email" required></div>
+      <div class="input-group"><label>Usuário</label><input type="text" id="reg-user" required minlength="3"></div>
+      <div class="input-group"><label>Senha forte</label><input type="password" id="reg-pass" required minlength="8" placeholder="8+ caracteres, letras, número e símbolo"></div>
+      <div class="input-group"><label>Confirmar Senha</label><input type="password" id="reg-pass-confirm" required minlength="8"></div>
+      <div class="checkbox-item" style="align-items:flex-start; margin-bottom:14px;">
+        <input type="checkbox" id="reg-lgpd" required>
+        <label for="reg-lgpd" style="font-size:12px; line-height:1.4;">Aceito o tratamento dos meus dados para cadastro e controle de acesso, conforme LGPD.</label>
+      </div>
+      <button class="btn" id="btn-reg" onclick="finalizarCadastro()">Enviar para Análise</button>
+      <button class="btn-link" onclick="trocarFormulario('view-login')">← Voltar</button>
+    </div>
+  </div>
+
+  <div id="route-dashboard" class="view-container">
+    <div class="dashboard-layout">
+      
+      <div class="sidebar">
+        <div class="sidebar-logo">
+          <img id="dash-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1NiIgZmlsbD0iIzI1NjNlYiIvPjxjaXJjbGUgY3g9IjEyOCIgY3k9IjEyOCIgcj0iODIiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuMTQiLz48dGV4dCB4PSIxMjgiIHk9IjE0NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNjQiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiPkE8L3RleHQ+PHRleHQgeD0iMTI4IiB5PSIxNzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZGJlYWZlIj5PSzwvdGV4dD48L3N2Zz4=" alt="Logo">
+          <h3 id="dash-nome-sistema">Sistema</h3>
+        </div>
+        <button class="nav-btn active" onclick="navegarDashboard('dash-inicio', this, 'Painel Geral')">🔎 Consultas / PDF</button>
+        <button class="nav-btn" onclick="navegarDashboard('dash-vistoria-wizard', this, 'Assistente de Vistoria')">📋 Nova Vistoria</button>
+        <button class="nav-btn" onclick="navegarDashboard('dash-assinaturas', this, 'Assinaturas Eletrônicas')">Assinaturas</button>
+        <div style="flex:1"></div>
+        <button class="nav-btn config" onclick="tentarAbrirConfiguracoes(this)">⚙️ Configurações Root</button>
+        <button class="nav-btn" onclick="sairSistema()" style="margin-top:10px;">🚪 Sair do Sistema</button>
+      </div>
+
+      <main class="main-content">
+        <div class="top-bar">
+          <h1 id="titulo-pagina">Painel Geral</h1>
+          <div class="user-profile" id="user-display">Buscando perfil...</div>
+        </div>
+
+        <div id="dash-inicio" class="dash-view active">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap;">
+            <h2 style="color:var(--text-main);">Consultas de Laudos e Emissão de PDF</h2>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn" style="width:auto; padding:10px 20px; font-size:13px;" onclick="carregarMeusLaudosDashboard(true)">↻ Atualizar consultas</button>
+              <button class="btn" style="width:auto; padding:10px 20px; font-size:13px;" onclick="document.querySelectorAll('.nav-btn')[1].click()">+ Fazer Vistoria</button>
+            </div>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Consulte vistorias registradas e emita o PDF completo com todos os detalhes, fotos e campos de assinatura manual.</p>
+          <div id="lista-laudos-dashboard">
+            </div>
+        </div>
+
+        <div id="dash-assinaturas" class="dash-view">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px;">
+            <div>
+              <h2 style="color:var(--text-main);">AUTENTIKO Sign</h2>
+              <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Crie sessões de assinatura, envie tokens por e-mail e acompanhe manifesto, evidências e PDF assinado.</p>
+            </div>
+            <button class="btn" style="width:auto; padding:10px 16px; font-size:13px;" onclick="carregarAssinaturasDashboard(true)">Atualizar assinaturas</button>
+          </div>
+
+          <div class="assinatura-panel-grid">
+            <div class="assinatura-box">
+              <h3 style="color:var(--primary); margin-bottom:12px;">Nova assinatura</h3>
+              <div class="input-group"><label>ID do laudo</label><input type="text" id="sign-id-laudo" placeholder="Selecione pela consulta ou informe o ID"></div>
+              <div class="assinatura-mini">Padrão: locatário/corretor na entrada e na saída. Deixe linhas em branco para ignorar.</div>
+              <div id="signatarios-form">
+                <div class="assinatura-row" data-papel="LOCATARIO_ENTRADA">
+                  <div class="input-group"><label>Nome - locatário entrada</label><input type="text" class="sign-nome"></div>
+                  <div class="input-group"><label>E-mail</label><input type="email" class="sign-email"></div>
+                  <div class="input-group"><label>CPF</label><input type="text" class="sign-cpf"></div>
+                  <div class="input-group"><label>Telefone</label><input type="text" class="sign-telefone"></div>
+                </div>
+                <div class="assinatura-row" data-papel="CORRETOR_ENTRADA">
+                  <div class="input-group"><label>Nome - corretor entrada</label><input type="text" class="sign-nome" value="RYCKY DE PALMER DIAS"></div>
+                  <div class="input-group"><label>E-mail</label><input type="email" class="sign-email" value="rycky.corretor@gmail.com"></div>
+                  <div class="input-group"><label>CPF</label><input type="text" class="sign-cpf"></div>
+                  <div class="input-group"><label>Telefone</label><input type="text" class="sign-telefone" value="(91) 99283-4665"></div>
+                </div>
+                <div class="assinatura-row" data-papel="LOCATARIO_SAIDA">
+                  <div class="input-group"><label>Nome - locatário saída</label><input type="text" class="sign-nome"></div>
+                  <div class="input-group"><label>E-mail</label><input type="email" class="sign-email"></div>
+                  <div class="input-group"><label>CPF</label><input type="text" class="sign-cpf"></div>
+                  <div class="input-group"><label>Telefone</label><input type="text" class="sign-telefone"></div>
+                </div>
+                <div class="assinatura-row" data-papel="CORRETOR_SAIDA">
+                  <div class="input-group"><label>Nome - corretor saída</label><input type="text" class="sign-nome" value="RYCKY DE PALMER DIAS"></div>
+                  <div class="input-group"><label>E-mail</label><input type="email" class="sign-email" value="rycky.corretor@gmail.com"></div>
+                  <div class="input-group"><label>CPF</label><input type="text" class="sign-cpf"></div>
+                  <div class="input-group"><label>Telefone</label><input type="text" class="sign-telefone" value="(91) 99283-4665"></div>
+                </div>
+              </div>
+              <button class="btn" id="btn-criar-assinatura" onclick="criarAssinaturaEletronica()">Criar sessão e enviar convites</button>
+              <div id="assinatura-criada-links" class="assinatura-mini"></div>
+            </div>
+
+            <div>
+              <div id="lista-assinaturas-dashboard" class="assinatura-box">Carregando assinaturas...</div>
+              <div id="detalhe-assinatura-dashboard" class="assinatura-box" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="dash-configs" class="dash-view">
+          <div class="config-section" style="max-width: 650px;">
+            <h3 style="margin-bottom:15px; color:var(--primary)">Customização Visual & Identidade da Empresa</h3>
+            <div class="grid-2">
+              <div class="input-group"><label>Nome do Documento / Sistema</label><input type="text" id="cfg-nome"></div>
+              <div class="input-group"><label>Modo de Manutenção</label><select id="cfg-manutencao"><option value="FALSE">Desativado (Sistema Online)</option><option value="TRUE">Ativado (Bloqueia Suporte Técnico)</option></select></div>
+            </div>
+            <div class="input-group"><label>Logo do AUTENTIKO / sistema (sidebar e login)</label><input type="text" id="cfg-logo-ui" placeholder="URL do Drive, base64 ou imagem externa"></div>
+            <div class="input-group"><label>Logo da PALMER IMÓVEIS para o PDF do laudo</label><input type="text" id="cfg-logo-laudo" placeholder="https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png"></div>
+            <div class="grid-2">
+              <div class="input-group"><label>Site da Imobiliária</label><input type="text" id="cfg-site"></div>
+              <div class="input-group"><label>Corretor Majoritário</label><input type="text" id="cfg-corretor"></div>
+            </div>
+            <div class="grid-2">
+               <div class="input-group"><label>Endereço Completo (Matriz)</label><input type="text" id="cfg-endereco"></div>
+               <div class="input-group"><label>Nº do CRECI</label><input type="text" id="cfg-creci"></div>
+            </div>
+            <button class="btn" onclick="salvarConfigs()">Salvar Parâmetros Globais</button>
+          </div>
+          <div class="config-section">
+            <h3 style="margin-bottom:15px; color:var(--primary)">Gestão de Equipe e Aprovações</h3>
+            <div id="wrapper-usuarios">Carregando usuários...</div>
+          </div>
+        </div>
+
+        <div id="dash-vistoria-wizard" class="dash-view">
+          <div class="wizard-header">
+            <span style="font-size:14px; font-weight:600; color:var(--text-muted);" id="txt-progresso-etapa">Iniciando Laudo...</span>
+            <div class="progress-container"><div id="wizard-progress-bar" class="progress-bar"></div></div>
+          </div>
+
+          <div id="edit-banner-laudo" class="edit-banner">Modo edição ativo. As alterações serão gravadas no laudo selecionado.</div>
+          <form id="form-vistoria-completo" onsubmit="event.preventDefault();">
+            <div class="wizard-step-pane active" data-step="1">
+              <h3>ETAPA 1 - Partes e Vistoriadores</h3>
+              <div class="grid-2">
+                <div class="input-group"><label>Número do Laudo</label><input type="text" id="etapa1_numeroLaudo" name="etapa1_numeroLaudo" readonly></div>
+                <div class="input-group"><label>Vistoriador Responsável</label>
+                  <select name="etapa1_vistoriador" id="input-responsavel" required>
+                    <option value="">Selecione na lista...</option>
+                    <option value="ANTONIO BARROS DA COSTA NETO">ANTONIO BARROS DA COSTA NETO</option>
+                    <option value="RYCKY DE PALMER MELO DIAS">RYCKY DE PALMER MELO DIAS</option>
+                  </select>
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="input-group"><label>Data da Vistoria</label><input type="date" name="etapa1_data" required></div>
+                <div class="input-group"><label>Hora</label><input type="time" name="etapa1_hora" required></div>
+              </div>
+              <div class="grid-2">
+                <div class="input-group"><label>Nome do Proprietário</label><input type="text" name="etapa1_proprietario" required></div>
+                <div class="input-group"><label>CPF do Proprietário</label><input type="text" name="etapa1_cpf_prop" oninput="mascaraCPF(this)" placeholder="000.000.000-00" required></div>
+              </div>
+              <div class="grid-2">
+                <div class="input-group"><label>Nome do Locatário</label><input type="text" name="etapa1_locatario" required></div>
+                <div class="input-group"><label>CPF do Locatário</label><input type="text" name="etapa1_cpf_loc" oninput="mascaraCPF(this)" placeholder="000.000.000-00" required></div>
+              </div>
+              <div class="grid-2">
+                <div class="input-group"><label>Contato / Whatsapp</label><input type="text" name="etapa1_contato" oninput="mascaraTelefone(this)" placeholder="(00) 00000-0000" required></div>
+                <div class="input-group"><label>E-mail de Contato</label><input type="email" name="etapa1_email" placeholder="email@exemplo.com"></div>
+              </div>
+            </div>
+
+            <div class="wizard-step-pane" data-step="2">
+              <h3>ETAPA 2 - Localização do Imóvel</h3>
+              <div class="grid-2">
+                <div class="input-group"><label>Rua/Avenida</label><input type="text" name="etapa2_rua" required></div>
+                <div class="input-group"><label>Número</label><input type="text" name="etapa2_numero" required></div>
+              </div>
+              <div class="input-group"><label>Referência de Localização</label><input type="text" name="etapa2_referencia"></div>
+              <div class="grid-2">
+                <div class="input-group"><label>Bairro</label><input type="text" name="etapa2_bairro" required></div>
+                <div class="input-group"><label>Cidade</label><input type="text" name="etapa2_cidade" required></div>
+              </div>
+              <div class="input-group"><label>CEP</label><input type="text" name="etapa2_cep" oninput="mascaraCEP(this)" placeholder="00000-000" required></div>
+            </div>
+
+            <div class="wizard-step-pane" data-step="3">
+              <h3>ETAPA 3 - Detalhes da Operação</h3>
+              <div class="grid-2">
+                <div class="input-group"><label>Tipo de Vistoria</label><select name="etapa3_tipo" required><option value="ENTRADA">ENTRADA</option><option value="SAÍDA">SAÍDA</option><option value="CONSTATAÇÃO">CONSTATAÇÃO</option></select></div>
+                <div class="input-group"><label>Estado Geral Avaliado Inicialmente</label><select name="etapa3_estado" required><option value="EXCELENTE">EXCELENTE</option><option value="BOM">BOM</option><option value="REGULAR">REGULAR</option><option value="RUIM">RUIM</option></select></div>
+              </div>
+              <div class="input-group"><label>Categoria do Imóvel</label>
+                <select name="etapa3_categoria" id="sel-categoria" onchange="verificarCategoria()" required>
+                  <option value="APARTAMENTO">APARTAMENTO</option><option value="CASA">CASA</option><option value="PONTO COMERCIAL">PONTO COMERCIAL</option><option value="FLAT">FLAT</option><option value="JK">JK</option><option value="TERRENO">TERRENO</option><option value="GALPÃO">GALPÃO</option><option value="IMÓVEL COMERCIAL">IMÓVEL COMERCIAL</option><option value="UNIDADE HOTELEIRA">UNIDADE HOTELEIRA</option><option value="CASA EM CONDOMÍNIO">CASA EM CONDOMÍNIO</option><option value="CASA GEMINADA">CASA GEMINADA</option><option value="OUTROS">OUTROS</option>
+                </select>
+                <input type="text" id="input-categoria-outros" name="etapa3_categoria_outros" placeholder="Especifique a categoria..." style="display:none; margin-top:8px;">
+              </div>
+              <div class="input-group"><label>Tipo de Locação Acordada</label>
+                <select name="etapa3_locacao" id="sel-locacao" onchange="verificarLocacao()" required>
+                  <option value="ANUAL">ANUAL</option><option value="SEMESTRAL">SEMESTRAL</option><option value="SEMANA">SEMANA</option><option value="DIA">DIA</option>
+                </select>
+                <input type="number" id="input-locacao-dia" name="etapa3_locacao_dias" placeholder="Quantidade de Dias..." style="display:none; margin-top:8px;">
+              </div>
+            </div>
+
+            <div class="wizard-step-pane" data-step="4">
+              <h3>ETAPA 4 - Itens Entregues & Infraestrutura</h3>
+              <div style="background: var(--card-bg); border:1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--primary); display:block; margin-bottom:10px;">SELECIONE E INFORME A QUANTIDADE RECEBIDA:</label>
+                <div class="checkbox-item" style="justify-content: space-between;"><label><input type="checkbox" onchange="toggleQtd(this, 'qtd-chaves')"> Chaves do Imóvel</label><input type="number" id="qtd-chaves" name="qtd_chaves" placeholder="Qtd" min="1" style="width:70px; display:none; background:var(--input-bg); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px;"></div>
+                <div class="checkbox-item" style="justify-content: space-between;"><label><input type="checkbox" onchange="toggleQtd(this, 'qtd-portao')"> Controles do Portão</label><input type="number" id="qtd-portao" name="qtd_portao" placeholder="Qtd" min="1" style="width:70px; display:none; background:var(--input-bg); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px;"></div>
+                <div class="checkbox-item" style="justify-content: space-between;"><label><input type="checkbox" onchange="toggleQtd(this, 'qtd-cerca')"> Controles de Cerca Elétrica</label><input type="number" id="qtd-cerca" name="qtd_cerca" placeholder="Qtd" min="1" style="width:70px; display:none; background:var(--input-bg); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px;"></div>
+                <div class="checkbox-item" style="justify-content: space-between;"><label><input type="checkbox" onchange="toggleQtd(this, 'qtd-alarme')"> Controles de Alarme</label><input type="number" id="qtd-alarme" name="qtd_alarme" placeholder="Qtd" min="1" style="width:70px; display:none; background:var(--input-bg); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px;"></div>
+                <div class="checkbox-item" style="justify-content: space-between;"><label><input type="checkbox" onchange="toggleQtd(this, 'qtd-tv')"> Controles de TV</label><input type="number" id="qtd-tv" name="qtd_tv" placeholder="Qtd" min="1" style="width:70px; display:none; background:var(--input-bg); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px;"></div>
+                <div class="checkbox-item" style="justify-content: space-between;"><label><input type="checkbox" onchange="toggleQtd(this, 'qtd-ar')"> Controles de Ar-Condicionado</label><input type="number" id="qtd-ar" name="qtd_ar" placeholder="Qtd" min="1" style="width:70px; display:none; background:var(--input-bg); border:1px solid var(--border-color); color:white; padding:5px; border-radius:4px;"></div>
+              </div>
+              <div class="grid-2">
+                <div class="input-group"><label>Energia Inclusa no Aluguel?</label><select name="etapa4_energia"><option>Não</option><option>Sim</option></select></div>
+                <div class="input-group"><label>Água Inclusa no Aluguel?</label><select name="etapa4_agua"><option>Não</option><option>Sim</option></select></div>
+              </div>
+              <div class="grid-2">
+                <div class="input-group"><label>Forma de Energia</label><select name="etapa4_forma_energia"><option>Convencional</option><option>Solar</option></select></div>
+                <div class="input-group"><label>Nº do Medidor de Energia</label><input type="text" name="etapa4_medidor" placeholder="Ex: 123456789"></div>
+              </div>
+            </div> <div class="wizard-step-pane" data-step="5" id="step-selecao-ambientes">
+              <h3>ETAPA 5 - Mapeamento de Ambientes</h3>
+              <p style="font-size:12px; color:var(--warning); margin-bottom:15px;">Informe a quantidade de cada cômodo. O sistema gerará as etapas de avaliação com envio de FOTOS apenas para os ambientes selecionados.</p>
+              <div style="max-height: 450px; overflow-y: auto; padding-right: 10px;">
+                <details class="cat-details"><summary class="cat-summary">🛋️ Salas</summary><div class="cat-content grid-2"><div class="input-group"><label>Sala de estar</label><input type="number" class="room-qty" name="qtd_sala_de_estar" data-name="Sala de estar" min="0" value="0"></div><div class="input-group"><label>Sala de TV</label><input type="number" class="room-qty" name="qtd_sala_de_tv" data-name="Sala de TV" min="0" value="0"></div><div class="input-group"><label>Sala de jantar</label><input type="number" class="room-qty" name="qtd_sala_de_jantar" data-name="Sala de jantar" min="0" value="0"></div><div class="input-group"><label>Lavabo</label><input type="number" class="room-qty" name="qtd_lavabo" data-name="Lavabo" min="0" value="0"></div><div class="input-group"><label>Escritório</label><input type="number" class="room-qty" name="qtd_escritorio" data-name="Escritório" min="0" value="0"></div></div></details>
+                <details class="cat-details"><summary class="cat-summary">🛏️ Quartos e Closets</summary><div class="cat-content grid-2"><div class="input-group"><label>Quarto Padrão</label><input type="number" class="room-qty" name="qtd_quarto_padrao" data-name="Quarto Padrão" min="0" value="0"></div><div class="input-group"><label>Suíte Master</label><input type="number" class="room-qty" name="qtd_suite_master" data-name="Suíte master" min="0" value="0"></div><div class="input-group"><label>Suíte Simples</label><input type="number" class="room-qty" name="qtd_suite_simples" data-name="Suíte simples" min="0" value="0"></div><div class="input-group"><label>Closet</label><input type="number" class="room-qty" name="qtd_closet" data-name="Closet" min="0" value="0"></div></div></details>
+                <details class="cat-details"><summary class="cat-summary">🚿 Banheiros</summary><div class="cat-content grid-2"><div class="input-group"><label>Banheiro social</label><input type="number" class="room-qty" name="qtd_banheiro_social" data-name="Banheiro social" min="0" value="0"></div><div class="input-group"><label>Banheiro da suíte</label><input type="number" class="room-qty" name="qtd_banheiro_suite" data-name="Banheiro da suíte" min="0" value="0"></div><div class="input-group"><label>Banheiro externo</label><input type="number" class="room-qty" name="qtd_banheiro_externo" data-name="Banheiro externo" min="0" value="0"></div></div></details>
+                <details class="cat-details"><summary class="cat-summary">🍳 Cozinha e Apoio</summary><div class="cat-content grid-2"><div class="input-group"><label>Cozinha</label><input type="number" class="room-qty" name="qtd_cozinha" data-name="Cozinha" min="0" value="0"></div><div class="input-group"><label>Cozinha gourmet</label><input type="number" class="room-qty" name="qtd_cozinha_gourmet" data-name="Cozinha gourmet" min="0" value="0"></div><div class="input-group"><label>Copa</label><input type="number" class="room-qty" name="qtd_copa" data-name="Copa" min="0" value="0"></div><div class="input-group"><label>Despensa</label><input type="number" class="room-qty" name="qtd_despensa" data-name="Despensa" min="0" value="0"></div></div></details>
+                <details class="cat-details"><summary class="cat-summary">🧺 Lavanderia e Serviço</summary><div class="cat-content grid-2"><div class="input-group"><label>Área de serviço</label><input type="number" class="room-qty" name="qtd_area_de_servico" data-name="Área de serviço" min="0" value="0"></div><div class="input-group"><label>Lavanderia</label><input type="number" class="room-qty" name="qtd_lavanderia" data-name="Lavanderia" min="0" value="0"></div><div class="input-group"><label>Quarto de empregada</label><input type="number" class="room-qty" name="qtd_quarto_empregada" data-name="Quarto de empregada" min="0" value="0"></div><div class="input-group"><label>Banheiro de empregada</label><input type="number" class="room-qty" name="qtd_banheiro_empregada" data-name="Banheiro de empregada" min="0" value="0"></div></div></details>
+                <details class="cat-details"><summary class="cat-summary">🌅 Varandas e Lazer</summary><div class="cat-content grid-2"><div class="input-group"><label>Varanda</label><input type="number" class="room-qty" name="qtd_varanda" data-name="Varanda" min="0" value="0"></div><div class="input-group"><label>Sacada</label><input type="number" class="room-qty" name="qtd_sacada" data-name="Sacada" min="0" value="0"></div><div class="input-group"><label>Área gourmet</label><input type="number" class="room-qty" name="qtd_area_gourmet" data-name="Área gourmet" min="0" value="0"></div><div class="input-group"><label>Churrasqueira</label><input type="number" class="room-qty" name="qtd_churrasqueira" data-name="Churrasqueira" min="0" value="0"></div><div class="input-group"><label>Piscina</label><input type="number" class="room-qty" name="qtd_piscina" data-name="Piscina" min="0" value="0"></div></div></details>
+                <details class="cat-details"><summary class="cat-summary">🚗 Garagens e Estrutura Externa</summary><div class="cat-content grid-2"><div class="input-group"><label>Garagem coberta</label><input type="number" class="room-qty" name="qtd_garagem" data-name="Garagem coberta" min="0" value="0"></div><div class="input-group"><label>Quintal</label><input type="number" class="room-qty" name="qtd_quintal" data-name="Quintal" min="0" value="0"></div><div class="input-group"><label>Fachada</label><input type="number" class="room-qty" name="qtd_fachada" data-name="Fachada" min="0" value="0"></div><div class="input-group"><label>Corredor Lateral</label><input type="number" class="room-qty" name="qtd_corredor" data-name="Corredor Lateral" min="0" value="0"></div></div></details>
+                <details class="cat-details"><summary class="cat-summary">🏢 Ambientes Comerciais/Especiais</summary><div class="cat-content grid-2"><div class="input-group"><label>Loja/Salão</label><input type="number" class="room-qty" name="qtd_loja" data-name="Loja" min="0" value="0"></div><div class="input-group"><label>Recepção</label><input type="number" class="room-qty" name="qtd_recepcao" data-name="Recepção" min="0" value="0"></div><div class="input-group"><label>Estoque</label><input type="number" class="room-qty" name="qtd_estoque" data-name="Estoque" min="0" value="0"></div><div class="input-group"><label>Galpão</label><input type="number" class="room-qty" name="qtd_galpao" data-name="Galpão" min="0" value="0"></div></div></details>
+              </div>
+            </div> <div id="dynamic-steps-container"></div>
+            <div id="final-steps-container"></div>
+
+            <div class="wizard-footer-nav">
+              <button type="button" class="btn btn-secondary" id="btn-wizard-prev" onclick="navegarPasso(-1)" disabled>← Anterior</button>
+              <button type="button" class="btn" id="btn-wizard-next" onclick="navegarPasso(1)">Avançar →</button>
+              <button type="button" class="btn" id="btn-wizard-submit" style="background:var(--success); display:none;" onclick="enviarLaudoFinal()">✓ Trancar e Salvar Laudo</button>
+            </div>
+
+          </form>
+
+          <div id="wizard-tela-final" style="display:none; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; text-align: center; margin-top:20px;">
+            <div style="font-size: 50px; margin-bottom: 15px;">✔</div>
+            <h2 style="color:var(--success)">Laudo Trancado e Armazenado!</h2>
+            <p style="color:var(--text-muted); margin-top:10px; margin-bottom:30px;">O Laudo e as Fotos dos ambientes foram enviados para o Google Drive e Planilha.</p>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
+              <button class="btn" onclick="resetarFormularioVistoria(); navegarDashboard('dash-inicio', document.querySelectorAll('.nav-btn')[0], 'Painel Geral')">Voltar para o Início</button>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // --- VARIÁVEIS GLOBAIS ---
+    var passoAtual = 1;
+    var totalPassosFixosIniciais = 5;
+    var totalPassosDinamicos = 0;
+    var totalPassosFinais = 2;
+    var totalPassos = totalPassosFixosIniciais + totalPassosFinais;
+    
+    var bancoAnamneseGlobal = [];
+    var selecoesAnamnese = {};
+    var uploadsPendentes = 0;
+    var editandoLaudoId = null;
+    var editandoPayloadOriginal = null;
+    var payloadPendenteEdicaoDinamica = null;
+    var usuarioAtual = null;
+
+    // --- UTILIDADE: SANITIZAR TEXTO PARA innerHTML ---
+    function sanitizar(texto) {
+      if (!texto) return '';
+      var div = document.createElement('div');
+      div.appendChild(document.createTextNode(texto));
+      return div.innerHTML;
+    }
+
+    // --- INICIALIZAÇÃO ---
+    window.onload = function() {
+      try {
+        var cfgCache = cacheGetLocal('CFG', 1000 * 60 * 60 * 12);
+        if (cfgCache) aplicarConfiguracaoNaTela(cfgCache);
+        atualizarConfiguracoesSaaS();
+      } catch(e) { console.log('Config não carregou:', e); }
+
+      try { carregarBancoAnamnese(); } catch(e) { console.log('Anamnese não carregou:', e); }
+
+      var numeroLaudo = document.getElementById('etapa1_numeroLaudo');
+      if (numeroLaudo && !numeroLaudo.value) numeroLaudo.value = Math.floor(10000000 + Math.random() * 90000000);
+
+      try { atualizarBarraProgresso(); } catch(e) {}
+
+      try {
+        var ultimaRota = cacheGetLocal('ROTA_ATUAL', 1000 * 60 * 60 * 24);
+        if (ultimaRota === 'dash-vistoria-wizard') {
+          var btnWizard = document.querySelectorAll('.nav-btn')[1];
+          navegarDashboard('dash-vistoria-wizard', btnWizard, 'Assistente de Vistoria');
+        } else {
+          carregarMeusLaudosDashboard(false);
+        }
+      } catch(e) { carregarMeusLaudosDashboard(false); }
+    };
+
+
+    // --- OPTIMUS UI CACHE LOCAL: renderiza rápido e sincroniza em segundo plano ---
+    var AUT_CACHE_PREFIX = 'AUTENTIKO_OK_CHECK_V5_';
+    function cacheSetLocal(chave, valor) {
+      try { localStorage.setItem(AUT_CACHE_PREFIX + chave, JSON.stringify({ t: Date.now(), v: valor })); } catch(e) {}
+    }
+    function cacheGetLocal(chave, maxAgeMs) {
+      try {
+        var raw = localStorage.getItem(AUT_CACHE_PREFIX + chave);
+        if (!raw) return null;
+        var obj = JSON.parse(raw);
+        if (maxAgeMs && obj.t && (Date.now() - obj.t > maxAgeMs)) return null;
+        return obj.v;
+      } catch(e) { return null; }
+    }
+    function cacheDelLocal(chave) {
+      try { localStorage.removeItem(AUT_CACHE_PREFIX + chave); } catch(e) {}
+    }
+    function skeletonLaudos() {
+      return '<div class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line medium"></div><div class="skeleton-line"></div></div>' +
+             '<div class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line medium"></div><div class="skeleton-line"></div></div>';
+    }
+
+    function carregarBancoAnamnese() {
+      google.script.run.withSuccessHandler(function(res) { if(res.sucesso) bancoAnamneseGlobal = res.dados; }).getClausulasAnamnese();
+    }
+
+    function logoFallbackAutentiko() {
+      return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1NiIgZmlsbD0iIzI1NjNlYiIvPjxjaXJjbGUgY3g9IjEyOCIgY3k9IjEyOCIgcj0iODIiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuMTQiLz48dGV4dCB4PSIxMjgiIHk9IjE0NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNjQiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiPkE8L3RleHQ+PHRleHQgeD0iMTI4IiB5PSIxNzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZGJlYWZlIj5PSzwvdGV4dD48L3N2Zz4=';
+    }
+
+    function extrairIdDriveAutentiko(url) {
+      url = String(url || '').trim();
+      var m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (m && m[1]) return m[1];
+      m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (m && m[1]) return m[1];
+      if (/^[a-zA-Z0-9_-]{20,}$/.test(url)) return url;
+      return '';
+    }
+
+    function normalizarLogoParaImg(src) {
+      src = String(src || '').trim();
+      if (!src) return logoFallbackAutentiko();
+      if (src.indexOf('data:image') === 0) return src;
+      var driveId = extrairIdDriveAutentiko(src);
+      if (driveId) return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveId) + '&sz=w512';
+      return src;
+    }
+
+    function aplicarLogoAutentiko(srcPrimario, srcBackup) {
+      var fallback = logoFallbackAutentiko();
+      var finalLogo = normalizarLogoParaImg(srcPrimario || srcBackup || fallback);
+      var backupLogo = normalizarLogoParaImg(srcBackup || fallback);
+      ['ui-logo', 'dash-logo'].forEach(function(id) {
+        var img = document.getElementById(id);
+        if (!img) return;
+        img.onerror = function() {
+          this.onerror = function() { this.onerror = null; this.src = fallback; };
+          this.src = backupLogo;
+        };
+        img.src = finalLogo;
+      });
+    }
+
+    function aplicarConfiguracaoNaTela(res) {
+      if (!res) return;
+
+      document.getElementById('ui-nome-sistema').innerText = res.appNome || 'AUTENTIKO-OK CHECK';
+      document.getElementById('dash-nome-sistema').innerText = res.appNome || 'AUTENTIKO';
+      aplicarLogoAutentiko(res.logoUiBase64 || res.logoBase64, res.logoUiPublica || res.logoUiRaw || res.logoPublica || res.logoRaw);
+
+      var cfgNome = document.getElementById('cfg-nome');
+      var cfgLogoUi = document.getElementById('cfg-logo-ui');
+      var cfgLogoLaudo = document.getElementById('cfg-logo-laudo');
+      var cfgManutencao = document.getElementById('cfg-manutencao');
+      var cfgSite = document.getElementById('cfg-site');
+      var cfgEndereco = document.getElementById('cfg-endereco');
+      var cfgCorretor = document.getElementById('cfg-corretor');
+      var cfgCreci = document.getElementById('cfg-creci');
+
+      if (cfgNome) cfgNome.value = res.laudoNome || res.nome || '';
+      if (cfgLogoUi) cfgLogoUi.value = res.logoUiRaw || res.logoRaw || '';
+      if (cfgLogoLaudo) cfgLogoLaudo.value = res.logoLaudoRaw || '';
+      if (cfgManutencao) cfgManutencao.value = res.manutencao ? 'TRUE' : 'FALSE';
+      if (cfgSite) cfgSite.value = res.site || '';
+      if (cfgEndereco) cfgEndereco.value = res.endereco || '';
+      if (cfgCorretor) cfgCorretor.value = res.corretor || '';
+      if (cfgCreci) cfgCreci.value = res.creci || '';
+
+      var selectResponsavel = document.getElementById('input-responsavel');
+      if (selectResponsavel && res.corretor && selectResponsavel.value === '') {
+        var optionExists = false;
+        for (var i = 0; i < selectResponsavel.options.length; i++) {
+          if (String(selectResponsavel.options[i].value).toUpperCase() === String(res.corretor).toUpperCase()) {
+            optionExists = true;
+            selectResponsavel.selectedIndex = i;
+            break;
+          }
+        }
+        if (!optionExists) {
+          var opt = document.createElement('option');
+          opt.value = res.corretor;
+          opt.textContent = res.corretor;
+          selectResponsavel.appendChild(opt);
+          selectResponsavel.value = res.corretor;
+        }
+      }
+    }
+
+    function atualizarConfiguracoesSaaS() {
+      aplicarLogoAutentiko(null, null);
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.sucesso) {
+            cacheSetLocal('CFG', res);
+            aplicarConfiguracaoNaTela(res);
+          }
+        })
+        .withFailureHandler(function() {
+          var cfgCache = cacheGetLocal('CFG', 1000 * 60 * 60 * 24);
+          if (cfgCache) aplicarConfiguracaoNaTela(cfgCache);
+        })
+        .getConfiguracoesGlobais();
+    }
+
+    // --- DASHBOARD DE LAUDOS (COM SANITIZAÇÃO XSS) ---
+    function carregarMeusLaudosDashboard(forcarAtualizacao) {
+      var container = document.getElementById('lista-laudos-dashboard');
+      if (!container) return;
+
+      function pick(obj, keys) {
+        obj = obj || {};
+        for (var i = 0; i < keys.length; i++) {
+          if (obj[keys[i]] !== undefined && obj[keys[i]] !== null && String(obj[keys[i]]).trim() !== '') return obj[keys[i]];
+        }
+        return '';
+      }
+
+      function jsStr(v) {
+        return String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ').replace(/\r/g, ' ');
+      }
+
+      function normalizarListaConsulta(res) {
+        if (res && Array.isArray(res.dados)) return res.dados;
+        if (res && Array.isArray(res.processos)) return res.processos;
+        if (res && Array.isArray(res.laudos)) return res.laudos;
+        if (res && Array.isArray(res.registros)) return res.registros;
+        if (res && Array.isArray(res.rows)) return res.rows;
+        if (Array.isArray(res)) return res;
+        return [];
+      }
+
+      function renderLista(dados, origemCache) {
+        if (!dados.length) {
+          container.innerHTML = "<p style='color:var(--text-muted);'>Nenhum laudo encontrado na base de dados. Se você acabou de registrar, clique em <b>Atualizar consultas</b>.</p>";
+          return;
+        }
+
+        var html = origemCache ? '<div class="cache-note">Mostrando cache local. Sincronizando com a planilha em segundo plano...</div>' : '';
+        dados.forEach(function(laudo) {
+          var id = pick(laudo, ['id', 'idLaudo', 'idProcesso', 'ID_LAUDO', 'ID_PROCESSO']);
+          var numero = pick(laudo, ['numero', 'numeroLaudo', 'codigoLaudo', 'NUMERO_LAUDO', 'CODIGO_LAUDO']) || id;
+          var editId = pick(laudo, ['id', 'idLaudo', 'ID_LAUDO', 'idProcesso', 'ID_PROCESSO', 'numero', 'numeroLaudo', 'codigoLaudo', 'NUMERO_LAUDO', 'CODIGO_LAUDO']) || numero;
+          var data = pick(laudo, ['dataVistoria', 'dataLaudo', 'criadoEm', 'DATA_VISTORIA', 'CRIADO_EM', 'DATA_REGISTRO']);
+          var responsavel = pick(laudo, ['responsavel', 'vistoriador', 'RESPONSAVEL', 'VISTORIADOR']);
+          var proprietario = pick(laudo, ['proprietario', 'nomeProprietario', 'PROPRIETARIO']);
+          var locatario = pick(laudo, ['locatario', 'LOCATARIO']);
+          var endereco = pick(laudo, ['endereco', 'ENDERECO', 'ENDERECO_IMOVEL']);
+          var status = pick(laudo, ['status', 'STATUS']) || 'REGISTRADO';
+          var pdfUrl = pick(laudo, ['pdfUrl', 'linkPdf', 'PDF_URL']);
+          var disabledAction = editId ? '' : ' disabled title="ID do laudo nao encontrado"';
+
+          html += '<div class="laudo-card"><div class="laudo-info">' +
+            '<h4>Laudo: ' + sanitizar(numero) + '</h4>' +
+            '<p><b>Status:</b> ' + sanitizar(status) + '</p>' +
+            '<p><b>Data:</b> ' + sanitizar(data) + '</p>' +
+            '<p><b>Vistoriador:</b> ' + sanitizar(responsavel) + '</p>' +
+            '<p><b>Proprietário:</b> ' + sanitizar(proprietario) + ' | <b>Locatário:</b> ' + sanitizar(locatario) + '</p>' +
+            '<p><b>Endereço:</b> ' + sanitizar(endereco) + '</p>' +
+            '</div><div class="consulta-actions">' +
+            '<span style="font-size:12px; color:var(--success); background:rgba(16,185,129,.1); padding:5px 10px; border-radius:12px;">Sincronizado</span>' +
+            '<button type="button" class="btn btn-edit-laudo" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.abrirEdicaoLaudo(\'' + jsStr(editId) + '\')"' + disabledAction + '>Editar</button>' +
+            (pdfUrl ? '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px; background:#0f766e;" onclick="abrirPdfExistente(\'' + jsStr(pdfUrl) + '\')">Abrir PDF</button>' : '') +
+            '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.emitirLaudoPdf(\'' + jsStr(editId) + '\')"' + disabledAction + '>Emitir Laudo PDF</button>' +
+            '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px; background:#1e3a8a;" onclick="window.abrirAssinaturaLaudo(\'' + jsStr(editId) + '\')"' + disabledAction + '>Assinatura</button>' +
+            '</div></div>';
+        });
+        container.innerHTML = html;
+      }
+
+      if (!forcarAtualizacao) {
+        var cached = cacheGetLocal('LAUDOS_V3', 1000 * 60 * 60 * 6);
+        if (cached && Array.isArray(cached) && cached.length) {
+          renderLista(cached, true);
+        } else {
+          container.innerHTML = skeletonLaudos();
+        }
+      } else {
+        container.innerHTML = skeletonLaudos();
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          var dados = normalizarListaConsulta(res);
+          cacheSetLocal('LAUDOS_V3', dados);
+          renderLista(dados, false);
+        })
+        .withFailureHandler(function(err) {
+          var cached = cacheGetLocal('LAUDOS_V3', 1000 * 60 * 60 * 24);
+          if (cached && cached.length) {
+            renderLista(cached, true);
+            mostrarToast('Falha ao atualizar. Mantive a consulta em cache.', 'var(--warning)');
+          } else {
+            container.innerHTML = "<p style='color:var(--danger);'>Erro ao carregar consultas: " + sanitizar(err && err.message ? err.message : err) + "</p>";
+          }
+        })
+        .apiListarProcessos();
+    }
+
+    function preencherFormularioComPayload(payload) {
+      payload = payload || {};
+      Object.keys(payload).forEach(function(k) {
+        var campo = null;
+        try {
+          campo = document.querySelector('[name="' + (window.CSS && CSS.escape ? CSS.escape(k) : String(k).replace(/"/g, '\\"')) + '"]');
+        } catch(e) {
+          campo = document.querySelector('[name="' + String(k).replace(/"/g, '\\"') + '"]');
+        }
+        if (!campo) campo = document.getElementById(k);
+        if (!campo) return;
+
+        if (campo.type === 'checkbox') {
+          campo.checked = String(payload[k]).toUpperCase() === 'SIM' || payload[k] === true || String(payload[k]) === campo.value;
+        } else if (campo.type === 'radio') {
+          campo.checked = String(campo.value) === String(payload[k]);
+        } else {
+          campo.value = payload[k];
+        }
+      });
+    }
+
+    function normalizarNomeAmbienteEdicao(nome) {
+      return String(nome || '')
+        .trim()
+        .replace(/\s+\d+$/g, '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .toUpperCase();
+    }
+
+    function inferirQuantidadesAmbientesEdicao(payload) {
+      payload = payload || {};
+      var contagem = {};
+      Object.keys(payload).forEach(function(k) {
+        if (!/^amb_\d+_tipo_ambiente$/i.test(k)) return;
+        var nome = normalizarNomeAmbienteEdicao(payload[k]);
+        if (!nome) return;
+        contagem[nome] = (contagem[nome] || 0) + 1;
+      });
+
+      var totalInferido = Object.keys(contagem).reduce(function(total, nome) {
+        return total + (contagem[nome] || 0);
+      }, 0);
+      if (!totalInferido) return 0;
+
+      document.querySelectorAll('.room-qty').forEach(function(input) {
+        var base = normalizarNomeAmbienteEdicao(input.getAttribute('data-name'));
+        var qtd = contagem[base] || 0;
+        input.value = qtd;
+        if (qtd > 0) {
+          var bloco = input.closest('details');
+          if (bloco) bloco.open = true;
+        }
+      });
+      return totalInferido;
+    }
+
+    function fotoPreviewSrc(foto) {
+      foto = foto || {};
+      return foto.thumbnailUrl || foto.url || foto.driveUrl || foto.directViewUrl || '';
+    }
+
+    function ambienteCodigoPorNome(nome) {
+      nome = String(nome || '').trim().toUpperCase();
+      if (!nome) return '';
+      var campos = document.querySelectorAll('[name$="_tipo_ambiente"]');
+      for (var i = 0; i < campos.length; i++) {
+        if (String(campos[i].value || '').trim().toUpperCase() === nome) {
+          return String(campos[i].name || '').replace(/_tipo_ambiente$/, '');
+        }
+      }
+      return '';
+    }
+
+    function renderizarFotosExistentes(payload, fotosServidor) {
+      payload = payload || {};
+      fotosServidor = Array.isArray(fotosServidor) ? fotosServidor : [];
+      var grupos = {};
+
+      Object.keys(payload).forEach(function(k) {
+        if (!/^amb_\d+_fotos_urls$/i.test(k)) return;
+        var codigo = k.replace(/_fotos_urls$/i, '');
+        grupos[codigo] = lerFotosHidden({ value: payload[k] });
+      });
+
+      fotosServidor.forEach(function(foto) {
+        foto = limparFotoParaPayload(foto || {});
+        var codigo = foto.ambienteCodigo || ambienteCodigoPorNome(foto.ambiente) || '';
+        if (!codigo) return;
+        if (!grupos[codigo]) grupos[codigo] = [];
+        var chaveFoto = foto.hash || foto.url || foto.arquivoId || foto.fotoId;
+        var existe = grupos[codigo].some(function(item) {
+          return (item.hash && item.hash === foto.hash) || (item.url && item.url === foto.url) || (item.arquivoId && item.arquivoId === foto.arquivoId);
+        });
+        if (!existe && chaveFoto) grupos[codigo].push(foto);
+      });
+
+      Object.keys(grupos).forEach(function(codigo) {
+        var hidden = document.getElementById('urls_' + codigo);
+        var preview = document.getElementById('preview_' + codigo);
+        if (!hidden || !preview) return;
+        var fotos = grupos[codigo].map(limparFotoParaPayload);
+        hidden.value = JSON.stringify(fotos);
+        preview.innerHTML = '';
+        fotos.forEach(function(foto, idx) {
+          var imgId = foto.id || foto.fotoId || ('foto_salva_' + codigo + '_' + idx);
+          foto.id = imgId;
+          var src = fotoPreviewSrc(foto);
+          preview.insertAdjacentHTML('beforeend',
+            '<div id="wrap_' + sanitizar(imgId) + '" class="foto-preview-box">' +
+              '<img src="' + sanitizar(src) + '">' +
+              '<button type="button" class="foto-delete-btn" onclick="removerFotoAmbiente(\'' + codigo + '\', \'' + sanitizar(imgId) + '\')">×</button>' +
+              '<div class="foto-ok-badge">✓ Drive</div>' +
+            '</div>'
+          );
+        });
+        hidden.value = JSON.stringify(fotos.map(limparFotoParaPayload));
+        atualizarObrigatoriedadeFoto(codigo);
+      });
+    }
+
+    function abrirEdicaoLaudo(idLaudo) {
+      idLaudo = String(idLaudo || '').trim();
+      if (!idLaudo || idLaudo === 'undefined' || idLaudo === 'null') {
+        mostrarToast('ID do laudo não localizado.', 'var(--danger)');
+        return;
+      }
+
+      mostrarToast('Abrindo laudo para edição...', 'var(--warning)');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.sucesso) {
+            mostrarToast((res && res.msg) ? res.msg : 'Não foi possível abrir a edição.', 'var(--danger)');
+            return;
+          }
+
+          resetarFormularioVistoria();
+          editandoLaudoId = res.idLaudo || idLaudo;
+          editandoPayloadOriginal = res.payload || res.rowObj || {};
+
+          preencherFormularioComPayload(editandoPayloadOriginal);
+          inferirQuantidadesAmbientesEdicao(editandoPayloadOriginal);
+
+          // Laudos antigos precisam recriar os cômodos dinâmicos antes de preencher piso, parede, fotos e anamnese.
+          payloadPendenteEdicaoDinamica = editandoPayloadOriginal;
+          try {
+            gerarEtapasDinamicas();
+            preencherFormularioComPayload(editandoPayloadOriginal);
+            renderizarFotosExistentes(editandoPayloadOriginal, res.fotos || []);
+          } catch(eDyn) {
+            console.warn('Edição: não foi possível gerar etapas dinâmicas automaticamente.', eDyn);
+          }
+
+          var numeroLaudo = document.getElementById('etapa1_numeroLaudo');
+          if (numeroLaudo && res.numeroLaudo) numeroLaudo.value = res.numeroLaudo;
+
+          var banner = document.getElementById('edit-banner-laudo');
+          if (banner) {
+            banner.innerHTML = 'Modo edição ativo: laudo <b>' + sanitizar(res.numeroLaudo || idLaudo) + '</b>. Ao finalizar, o sistema criará uma nova revisão com novo ID e novo hash.';
+            banner.classList.add('show');
+          }
+
+          var btnWizard = document.querySelectorAll('.nav-btn')[1];
+          navegarDashboard('dash-vistoria-wizard', btnWizard, 'Editar Vistoria');
+          mostrarToast('Laudo carregado para edição.', 'var(--success)');
+        })
+        .withFailureHandler(function(err) {
+          mostrarToast('Erro ao abrir edição: ' + (err && err.message ? err.message : err), 'var(--danger)');
+        })
+        .apiObterLaudoParaEdicao(idLaudo);
+    }
+
+    function abrirPdfExistente(url) {
+      if (url) window.open(url, '_blank');
+    }
+
+    function abrirAssinaturaLaudo(idLaudo) {
+      idLaudo = String(idLaudo || '').trim();
+      if (!idLaudo) return mostrarToast('ID do laudo não localizado.', 'var(--danger)');
+      var btn = document.querySelector('[onclick*="dash-assinaturas"]');
+      navegarDashboard('dash-assinaturas', btn, 'Assinaturas Eletrônicas');
+      document.getElementById('sign-id-laudo').value = idLaudo;
+      carregarAssinaturasDashboard(false);
+      google.script.run.withSuccessHandler(function(res) {
+        if (!res || !res.sucesso) return;
+        var p = res.payload || res.rowObj || {};
+        function pick(keys) {
+          for (var i = 0; i < keys.length; i++) {
+            if (p[keys[i]] !== undefined && p[keys[i]] !== null && String(p[keys[i]]).trim() !== '') return p[keys[i]];
+          }
+          return '';
+        }
+        preencherSignatarioPorPapel('LOCATARIO_ENTRADA', {
+          nome: pick(['etapa1_locatario', 'LOCATARIO', 'locatario']),
+          cpf: pick(['etapa1_cpf_loc', 'CPF_LOCATARIO', 'cpfLocatario']),
+          email: pick(['etapa1_email', 'EMAIL', 'email']),
+          telefone: pick(['etapa1_contato', 'CONTATO', 'contato'])
+        });
+        preencherSignatarioPorPapel('LOCATARIO_SAIDA', {
+          nome: pick(['etapa1_locatario', 'LOCATARIO', 'locatario']),
+          cpf: pick(['etapa1_cpf_loc', 'CPF_LOCATARIO', 'cpfLocatario']),
+          email: pick(['etapa1_email', 'EMAIL', 'email']),
+          telefone: pick(['etapa1_contato', 'CONTATO', 'contato'])
+        });
+      }).apiObterLaudoParaEdicao(idLaudo);
+    }
+
+    function preencherSignatarioPorPapel(papel, dados) {
+      var row = document.querySelector('.assinatura-row[data-papel="' + papel + '"]');
+      if (!row) return;
+      if (dados.nome) row.querySelector('.sign-nome').value = dados.nome;
+      if (dados.email) row.querySelector('.sign-email').value = dados.email;
+      if (dados.cpf) row.querySelector('.sign-cpf').value = dados.cpf;
+      if (dados.telefone) row.querySelector('.sign-telefone').value = dados.telefone;
+    }
+
+    function coletarSignatariosForm() {
+      var out = [];
+      document.querySelectorAll('#signatarios-form .assinatura-row').forEach(function(row) {
+        var obj = {
+          papel: row.getAttribute('data-papel') || 'OUTRO',
+          nome: (row.querySelector('.sign-nome') || {}).value || '',
+          email: (row.querySelector('.sign-email') || {}).value || '',
+          cpf: (row.querySelector('.sign-cpf') || {}).value || '',
+          telefone: (row.querySelector('.sign-telefone') || {}).value || ''
+        };
+        obj.nome = obj.nome.trim();
+        obj.email = obj.email.trim();
+        obj.cpf = obj.cpf.trim();
+        obj.telefone = obj.telefone.trim();
+        if (obj.nome || obj.email || obj.cpf) out.push(obj);
+      });
+      return out;
+    }
+
+    function criarAssinaturaEletronica() {
+      var idLaudo = document.getElementById('sign-id-laudo').value.trim();
+      var signatarios = coletarSignatariosForm();
+      if (!idLaudo) return mostrarToast('Informe o ID do laudo.', 'var(--danger)');
+      if (!signatarios.length) return mostrarToast('Informe ao menos um signatário.', 'var(--danger)');
+      for (var i = 0; i < signatarios.length; i++) {
+        if (!signatarios[i].email) return mostrarToast('Todo signatário informado precisa de e-mail para receber token.', 'var(--danger)');
+      }
+      var btn = document.getElementById('btn-criar-assinatura');
+      btn.disabled = true;
+      btn.innerText = 'Criando sessão...';
+      document.getElementById('assinatura-criada-links').innerHTML = '';
+      google.script.run.withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.innerText = 'Criar sessão e enviar convites';
+        if (res && res.sucesso) {
+          mostrarToast('Sessão criada e convites processados.', 'var(--success)');
+          cacheDelLocal('ASSINATURAS_V1');
+          renderLinksAssinaturaCriada(res);
+          carregarAssinaturasDashboard(true);
+        } else {
+          mostrarToast((res && res.msg) ? res.msg : 'Erro ao criar assinatura.', 'var(--danger)');
+        }
+      }).withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.innerText = 'Criar sessão e enviar convites';
+        mostrarToast('Erro no servidor: ' + (err && err.message ? err.message : err), 'var(--danger)');
+      }).apiSignCriarSessao(idLaudo, signatarios, [], usuarioAtual || {});
+    }
+
+    function renderLinksAssinaturaCriada(res) {
+      var box = document.getElementById('assinatura-criada-links');
+      var html = '<div style="margin-top:12px;"><b>ID:</b> ' + sanitizar(res.idAssinatura || '') + '</div>';
+      (res.links || []).forEach(function(l) {
+        html += '<div style="margin-top:8px; padding:8px; border:1px solid var(--border-color); border-radius:8px;">' +
+          '<b>' + sanitizar(l.nome || l.papel) + '</b><br>' +
+          '<span>E-mail: ' + (l.emailEnviado ? 'enviado' : 'não enviado') + '</span><br>' +
+          '<span>Token administrativo: <b>' + sanitizar(l.token || '') + '</b></span><br>' +
+          '<a href="' + sanitizar(l.link || '') + '" target="_blank">Abrir link de assinatura</a>' +
+          '</div>';
+      });
+      box.innerHTML = html;
+    }
+
+    function carregarAssinaturasDashboard(forcarAtualizacao) {
+      var box = document.getElementById('lista-assinaturas-dashboard');
+      if (!box) return;
+      if (!forcarAtualizacao) {
+        var cached = cacheGetLocal('ASSINATURAS_V1', 1000 * 60 * 20);
+        if (cached && cached.length) renderAssinaturasDashboard(cached, true);
+        else box.innerHTML = 'Carregando assinaturas...';
+      } else {
+        box.innerHTML = 'Atualizando assinaturas...';
+      }
+      google.script.run.withSuccessHandler(function(res) {
+        if (res && res.sucesso) {
+          cacheSetLocal('ASSINATURAS_V1', res.dados || []);
+          renderAssinaturasDashboard(res.dados || [], false);
+        } else {
+          box.innerHTML = '<p style="color:var(--danger);">' + sanitizar(res && res.msg ? res.msg : 'Erro ao listar assinaturas.') + '</p>';
+        }
+      }).withFailureHandler(function(err) {
+        box.innerHTML = '<p style="color:var(--danger);">Erro: ' + sanitizar(err && err.message ? err.message : err) + '</p>';
+      }).apiSignListarAssinaturas();
+    }
+
+    function renderAssinaturasDashboard(lista, origemCache) {
+      var box = document.getElementById('lista-assinaturas-dashboard');
+      if (!box) return;
+      var html = '<h3 style="color:var(--primary); margin-bottom:12px;">Sessões de assinatura</h3>';
+      if (origemCache) html += '<div class="cache-note">Mostrando cache local. Sincronizando em segundo plano...</div>';
+      if (!lista.length) {
+        box.innerHTML = html + '<p style="color:var(--text-muted);">Nenhuma assinatura criada ainda.</p>';
+        return;
+      }
+      lista.forEach(function(a) {
+        var status = String(a.status || '').toUpperCase();
+        html += '<div class="assinatura-card">' +
+          '<h4>Laudo ' + sanitizar(a.numeroLaudo || a.idLaudo || '') + '</h4>' +
+          '<span class="assinatura-status ' + sanitizar(status) + '">' + sanitizar(status || 'ABERTA') + '</span>' +
+          '<p><b>ID:</b> ' + sanitizar(a.idAssinatura || '') + '</p>' +
+          '<p><b>Assinados:</b> ' + sanitizar(a.qtdAssinados || '0') + ' de ' + sanitizar(a.qtdSignatarios || '0') + ' | <b>Expira:</b> ' + sanitizar(a.expiraEm || '') + '</p>' +
+          '<p><b>Risco:</b> ' + sanitizar(a.riscoGeral || '-') + '</p>' +
+          '<div class="assinatura-mini">' + sanitizar((a.signatarios || []).map(function(s) { return (s.papelLabel || s.papel) + ': ' + s.status; }).join(' | ')) + '</div>' +
+          '<div class="assinatura-links">' +
+          '<button class="btn" onclick="verDetalhesAssinatura(\'' + sanitizar(a.idAssinatura || '') + '\')">Detalhes</button>' +
+          (a.pdfAssinadoUrl ? '<button class="btn" style="background:#0f766e;" onclick="abrirPdfExistente(\'' + sanitizar(a.pdfAssinadoUrl) + '\')">PDF assinado</button>' : '') +
+          (a.manifestoUrl ? '<button class="btn" style="background:#1e3a8a;" onclick="abrirPdfExistente(\'' + sanitizar(a.manifestoUrl) + '\')">Manifesto</button>' : '') +
+          (status !== 'CONCLUIDA' && status !== 'CANCELADA' ? '<button class="btn" style="background:#991b1b;" onclick="cancelarAssinatura(\'' + sanitizar(a.idAssinatura || '') + '\')">Cancelar</button>' : '') +
+          '</div></div>';
+      });
+      box.innerHTML = html;
+    }
+
+    function verDetalhesAssinatura(idAssinatura) {
+      var box = document.getElementById('detalhe-assinatura-dashboard');
+      box.style.display = 'block';
+      box.innerHTML = 'Carregando detalhes...';
+      google.script.run.withSuccessHandler(function(res) {
+        if (!res || !res.sucesso) {
+          box.innerHTML = '<p style="color:var(--danger);">' + sanitizar(res && res.msg ? res.msg : 'Erro ao abrir detalhes.') + '</p>';
+          return;
+        }
+        var html = '<h3 style="color:var(--primary); margin-bottom:12px;">Detalhes da assinatura</h3>';
+        html += '<p><b>ID:</b> ' + sanitizar(idAssinatura) + '</p>';
+        html += '<h4 style="margin-top:14px;">Signatários</h4>';
+        (res.signatarios || []).forEach(function(s) {
+          html += '<div class="assinatura-card"><p><b>' + sanitizar(s.NOME || '') + '</b> - ' + sanitizar(s.PAPEL || '') + '</p>' +
+            '<p>Status: ' + sanitizar(s.STATUS || '') + ' | Assinado em: ' + sanitizar(s.ASSINADO_EM || '') + '</p>' +
+            '<p>Hash assinatura: <span style="font-family:Consolas,monospace; word-break:break-all;">' + sanitizar(s.HASH_ASSINATURA || '') + '</span></p></div>';
+        });
+        html += '<h4>Evidências restritas</h4>';
+        (res.evidencias || []).forEach(function(e) {
+          html += '<p style="font-size:12px;">' + sanitizar(e.TIPO || '') + ' | ' + sanitizar(e.MIME_TYPE || '') + ' | ' +
+            sanitizar(e.TAMANHO_BYTES || '') + ' bytes | Hash: <span style="font-family:Consolas,monospace; word-break:break-all;">' + sanitizar(e.HASH_EVIDENCIA || '') +
+            '</span> | <a href="' + sanitizar(e.ARQUIVO_URL || '') + '" target="_blank">visualizar Drive</a></p>';
+        });
+        html += '<h4>Eventos auditáveis</h4>';
+        (res.eventos || []).slice(-20).reverse().forEach(function(ev) {
+          html += '<p style="font-size:12px; border-bottom:1px solid var(--border-color); padding:6px 0;"><b>' + sanitizar(ev.TIPO || '') + '</b> - ' + sanitizar(ev.QUANDO || '') +
+            '<br><span style="font-family:Consolas,monospace; word-break:break-all;">' + sanitizar(ev.HASH_EVENTO || '') + '</span></p>';
+        });
+        box.innerHTML = html;
+      }).apiSignObterAssinatura(idAssinatura);
+    }
+
+    function cancelarAssinatura(idAssinatura) {
+      if (!confirm('Cancelar esta sessão de assinatura?')) return;
+      google.script.run.withSuccessHandler(function(res) {
+        mostrarToast(res && res.msg ? res.msg : 'Sessão atualizada.', res && res.sucesso ? 'var(--success)' : 'var(--danger)');
+        if (res && res.sucesso) {
+          cacheDelLocal('ASSINATURAS_V1');
+          carregarAssinaturasDashboard(true);
+        }
+      }).apiSignCancelarAssinatura(idAssinatura, usuarioAtual || {});
+    }
+
+
+    function emitirLaudoPdf(idLaudo) {
+      if (!idLaudo) {
+        mostrarToast('ID do laudo não localizado.', 'var(--danger)');
+        return;
+      }
+      mostrarToast('Gerando PDF com logo da Palmer Imóveis...', 'var(--warning)');
+      google.script.run.withSuccessHandler(function(res) {
+        if (res && res.sucesso) {
+          mostrarToast('PDF gerado com sucesso.', 'var(--success)');
+          cacheDelLocal('LAUDOS_V3');
+          if (res.url) window.open(res.url, '_blank');
+          carregarMeusLaudosDashboard(true);
+        } else {
+          mostrarToast((res && res.msg) ? res.msg : 'Erro ao gerar PDF.', 'var(--danger)');
+        }
+      }).withFailureHandler(function(err) {
+        mostrarToast('Erro no servidor ao gerar PDF: ' + (err && err.message ? err.message : err), 'var(--danger)');
+      }).apiEmitirLaudoPdf(idLaudo);
+    }
+
+    // --- MÁSCARAS INTELIGENTES ---
+    function mascaraCPF(i) { var v = i.value.replace(/\D/g, "").substring(0, 11); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); i.value = v; }
+    function mascaraTelefone(i) { var v = i.value.replace(/\D/g, "").substring(0, 11); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; }
+    function mascaraCEP(i) { var v = i.value.replace(/\D/g, "").substring(0, 8); v = v.replace(/^(\d{5})(\d)/, "$1-$2"); i.value = v; }
+
+    function verificarCategoria() { var sel = document.getElementById('sel-categoria'); var input = document.getElementById('input-categoria-outros'); var outros = String(sel.value).toUpperCase() === "OUTROS"; input.style.display = outros ? "block" : "none"; input.required = outros; if(!outros) input.value = ""; }
+    function verificarLocacao() { var sel = document.getElementById('sel-locacao'); var input = document.getElementById('input-locacao-dia'); var dia = String(sel.value).toUpperCase() === "DIA"; input.style.display = dia ? "block" : "none"; input.required = dia; if(!dia) input.value = ""; }
+    function toggleQtd(checkbox, idInput) { var input = document.getElementById(idInput); input.style.display = checkbox.checked ? "inline-block" : "none"; if(!checkbox.checked) input.value = ""; }
+
+    // --- LÓGICA DO SMART SELECT (ANAMNESE) ---
+    function fecharTodosDropdowns(e) { if(!e.target.closest('.smart-select-container')) document.querySelectorAll('.smart-dropdown').forEach(function(d) { d.classList.remove('open'); }); }
+    function toggleDropdownAnamnese(idPrefix) { document.querySelectorAll('.smart-dropdown').forEach(function(d) { if(d.id !== 'dd_' + idPrefix) d.classList.remove('open'); }); document.getElementById('dd_' + idPrefix).classList.toggle('open'); document.getElementById('search_' + idPrefix).focus(); }
+    
+    function filtrarAnamnese(idPrefix) {
+      var input = document.getElementById('search_' + idPrefix).value.toLowerCase();
+      var options = document.querySelectorAll('#dd_' + idPrefix + ' .smart-option');
+      options.forEach(function(opt) {
+        var cat = opt.getAttribute('data-cat'); var text = opt.getAttribute('data-text');
+        opt.style.display = (cat.indexOf(input) !== -1 || text.indexOf(input) !== -1) ? "flex" : "none";
+      });
+    }
+
+    function atualizarBadgeAnamnese(idPrefix, checkbox) {
+      var valor = checkbox.value;
+      if (!selecoesAnamnese[idPrefix]) selecoesAnamnese[idPrefix] = [];
+      if (checkbox.checked) { if(selecoesAnamnese[idPrefix].indexOf(valor) === -1) selecoesAnamnese[idPrefix].push(valor); } 
+      else { selecoesAnamnese[idPrefix] = selecoesAnamnese[idPrefix].filter(function(item) { return item !== valor; }); }
+      
+      var tagsHtml = selecoesAnamnese[idPrefix].map(function(item) {
+        return '<div class="smart-tag">' + sanitizar(item) + ' <span onclick="removerTagAnamnese(\'' + idPrefix + '\', this)">✕</span></div>';
+      }).join('');
+      document.getElementById('tags_' + idPrefix).innerHTML = tagsHtml;
+      document.getElementById('hidden_' + idPrefix).value = JSON.stringify(selecoesAnamnese[idPrefix]);
+    }
+
+    function removerTagAnamnese(idPrefix, spanElement) {
+      var tagDiv = spanElement.parentElement;
+      var valor = tagDiv.textContent.replace(' ✕', '').trim();
+      var checkboxes = document.querySelectorAll('#dd_' + idPrefix + ' input[type="checkbox"]');
+      checkboxes.forEach(function(cb) {
+        if (cb.value === valor) cb.checked = false;
+      });
+      selecoesAnamnese[idPrefix] = selecoesAnamnese[idPrefix].filter(function(item) { return item !== valor; });
+      var tagsHtml = selecoesAnamnese[idPrefix].map(function(item) {
+        return '<div class="smart-tag">' + sanitizar(item) + ' <span onclick="removerTagAnamnese(\'' + idPrefix + '\', this)">✕</span></div>';
+      }).join('');
+      document.getElementById('tags_' + idPrefix).innerHTML = tagsHtml;
+      document.getElementById('hidden_' + idPrefix).value = JSON.stringify(selecoesAnamnese[idPrefix]);
+    }
+
+    // --- UPLOAD E COMPRESSÃO DE FOTOS NO NAVEGADOR ---
+    async function processarFotosAmbiente(idPrefix) {
+  var input = document.getElementById('files_' + idPrefix);
+  var preview = document.getElementById('preview_' + idPrefix);
+  var hiddenUrls = document.getElementById('urls_' + idPrefix);
+  var files = input.files;
+  
+  if(files.length === 0) return;
+  
+  var MAX_FOTOS = 20;
+  if(files.length > MAX_FOTOS) {
+    mostrarToast("Máximo de " + MAX_FOTOS + " fotos por ambiente.", "var(--danger)");
+    input.value = '';
+    return;
+  }
+
+  mostrarToast("Iniciando envio seguro de fotos (Fila Sequencial)...", "var(--warning)");
+  var urlsAtuais = lerFotosHidden(hiddenUrls);
+
+  // Função auxiliar para prometer o upload do backend
+  const uploadBackend = (base64, nomeArquivo) => {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject)
+        .uploadImagemVistoria(base64, nomeArquivo);
+    });
+  };
+
+  // Loop assíncrono (Sequencial)
+  for(var i = 0; i < files.length; i++) {
+    uploadsPendentes++;
+    var base64 = await comprimirImagem(files[i]);
+    var imgId = 'img_' + idPrefix + '_' + Date.now() + '_' + i;
+    
+    // Renderiza o esqueleto de carregamento
+    preview.innerHTML += '<div id="wrap_' + imgId + '" class="foto-preview-box">' +
+      '<img src="' + base64 + '">' +
+      '<button type="button" class="foto-delete-btn" onclick="removerFotoAmbiente(\'' + idPrefix + '\', \'' + imgId + '\')">×</button>' +
+      '<div class="foto-loader">Enviando ' + (i+1) + '/' + files.length + '...</div></div>';
+    
+    try {
+      // Aguarda o Google Drive responder antes de enviar a próxima
+      var res = await uploadBackend(base64, 'Vistoria_' + idPrefix + '_Foto_' + i + '.jpg');
+      var wrap = document.getElementById('wrap_' + imgId);
+      
+      if(wrap && res.sucesso) {
+        var ambienteEl = document.querySelector('[name="' + idPrefix + '_tipo_ambiente"]');
+        var ambienteNome = ambienteEl ? ambienteEl.value : idPrefix;
+        var fotoObj = {
+          id: imgId,
+          fotoId: res.fotoId || '',
+          ambiente: ambienteNome || idPrefix,
+          ambienteCodigo: idPrefix,
+          item: 'Registro fotográfico do ambiente',
+          tipoObservacao: 'Registro fotográfico do ambiente',
+          url: res.url || res.driveUrl || '',
+          thumbnailUrl: res.thumbnailUrl || '',
+          directViewUrl: res.directViewUrl || '',
+          hash: res.hash || '',
+          arquivoId: res.fileId || res.arquivoId || '',
+          nome: res.nome || '',
+          mimeType: res.mimeType || 'image/jpeg'
+        };
+        urlsAtuais.push(fotoObj);
+        hiddenUrls.value = JSON.stringify(urlsAtuais.map(limparFotoParaPayload));
+        wrap.innerHTML = '<img src="' + base64 + '">' +
+          '<button type="button" class="foto-delete-btn" onclick="removerFotoAmbiente(\'' + idPrefix + '\', \'' + imgId + '\')">×</button>' +
+          '<div class="foto-ok-badge">✓ Foto salva</div>';
+      } else if (wrap) {
+        wrap.innerHTML = '<img src="' + base64 + '"><div style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,0,0,0.8); display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; font-size:9px; text-align:center; padding:2px;"><b>ERRO</b></div>';
+      }
+    } catch(err) {
+      var wrap = document.getElementById('wrap_' + imgId);
+      if(wrap) wrap.innerHTML = '<img src="' + base64 + '"><div style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,0,0,0.8); display:flex; justify-content:center; align-items:center; color:white; font-size:9px; text-align:center;">Falha</div>';
+    } finally {
+      uploadsPendentes--;
+    }
+  }
+  mostrarToast("Todas as fotos do ambiente foram sincronizadas!", "var(--success)");
+}
+
+    function lerFotosHidden(hiddenEl) {
+      if (!hiddenEl || !hiddenEl.value) return [];
+      try {
+        var arr = JSON.parse(hiddenEl.value);
+        if (!Array.isArray(arr)) return [];
+        return arr.map(function(item) {
+          if (typeof item === 'string') return { id:'', url:item, hash:'', arquivoId:'' };
+          return limparFotoParaPayload(item || {});
+        });
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function limparFotoParaPayload(item) {
+      item = item || {};
+      return {
+        id: item.id || '',
+        fotoId: item.fotoId || '',
+        ambiente: item.ambiente || '',
+        ambienteCodigo: item.ambienteCodigo || '',
+        item: item.item || '',
+        tipoObservacao: item.tipoObservacao || '',
+        url: item.url || item.driveUrl || item.directViewUrl || '',
+        thumbnailUrl: item.thumbnailUrl || '',
+        hash: item.hash || '',
+        arquivoId: item.arquivoId || item.fileId || '',
+        nome: item.nome || item.nomeArquivo || '',
+        mimeType: item.mimeType || 'image/jpeg'
+      };
+    }
+
+    function removerFotoAmbiente(idPrefix, imgId) {
+      var hiddenUrls = document.getElementById('urls_' + idPrefix);
+      var fotos = lerFotosHidden(hiddenUrls);
+      var removida = null;
+      var novas = [];
+      fotos.forEach(function(f) {
+        if (f.id === imgId || (!f.id && f.url && imgId && imgId.indexOf(f.url) >= 0)) removida = f;
+        else novas.push(f);
+      });
+      if (hiddenUrls) hiddenUrls.value = JSON.stringify(novas.map(limparFotoParaPayload));
+      var wrap = document.getElementById('wrap_' + imgId);
+      if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+      atualizarObrigatoriedadeFoto(idPrefix);
+      mostrarToast('Foto removida da etapa.', 'var(--warning)');
+      if (removida && (removida.fotoId || removida.arquivoId || removida.url)) {
+        google.script.run.withFailureHandler(function(){}).excluirImagemVistoria(removida.fotoId || removida.arquivoId || removida.url);
+      }
+    }
+
+    function comprimirImagem(file) {
+      return new Promise(function(resolve) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+          var img = new Image();
+          img.src = event.target.result;
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var W = 1000;
+            var H = 1200;
+            canvas.width = W;
+            canvas.height = H;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            var scale = Math.min(W / img.width, H / img.height);
+            var nw = img.width * scale;
+            var nh = img.height * scale;
+            var nx = (W - nw) / 2;
+            var ny = (H - nh) / 2;
+            ctx.drawImage(img, nx, ny, nw, nh);
+            resolve(canvas.toDataURL('image/jpeg', 0.58));
+          };
+          img.onerror = function() {
+            mostrarToast('Não foi possível ler a imagem.', 'var(--danger)');
+            resolve(event.target.result);
+          };
+        };
+      });
+    }
+
+    // --- GERADOR DE CÔMODOS DINÂMICOS COM SISTEMA DE FOTOS ---
+    function gerarEtapasDinamicas() {
+      var container = document.getElementById('dynamic-steps-container');
+      var finalContainer = document.getElementById('final-steps-container');
+      container.innerHTML = ''; finalContainer.innerHTML = '';
+      selecoesAnamnese = {}; 
+      
+      var htmlDinamico = '';
+      var stepCounter = totalPassosFixosIniciais + 1;
+      
+      var inputs = document.querySelectorAll('.room-qty');
+      inputs.forEach(function(input) {
+        var qtd = parseInt(input.value) || 0;
+        var nomeQuarto = input.getAttribute('data-name');
+        
+        for(var i = 1; i <= qtd; i++) {
+          var titulo = qtd > 1 ? nomeQuarto + ' ' + i : nomeQuarto;
+          var idPrefix = 'amb_' + stepCounter; 
+          
+          var opcoesHTML = bancoAnamneseGlobal.map(function(item) {
+            return '<label class="smart-option" data-cat="' + sanitizar(item.categoria.toLowerCase()) + '" data-text="' + sanitizar(item.texto.toLowerCase()) + '"><input type="checkbox" value="' + sanitizar(item.texto) + '" onchange="atualizarBadgeAnamnese(\'' + idPrefix + '\', this)"><span class="smart-cat-badge">' + sanitizar(item.categoria) + '</span> ' + sanitizar(item.texto) + '</label>';
+          }).join('');
+          if(bancoAnamneseGlobal.length === 0) opcoesHTML = '<p style="padding:10px; color:var(--text-muted); font-size:12px;">Nenhuma cláusula cadastrada na aba ANAMINESE.</p>';
+
+          htmlDinamico += '<div class="wizard-step-pane" data-step="' + stepCounter + '">' +
+            '<h3>AVALIAÇÃO - ' + sanitizar(titulo) + '</h3>' +
+            '<input type="hidden" name="' + idPrefix + '_tipo_ambiente" value="' + sanitizar(titulo) + '">' +
+            '<div class="input-group file-input-wrapper" style="background:rgba(99, 102, 241, 0.05); padding:15px; border-radius:8px;">' +
+              '<label style="color:var(--primary); font-size:13px;">📸 Fotos do Ambiente (Obrigatório)</label>' +
+              '<input type="file" id="files_' + idPrefix + '" multiple accept="image/*" onchange="window.processarFotosAmbiente(\'' + idPrefix + '\')" ' + (editandoLaudoId ? '' : 'required') + '>' +
+              '<p class="upload-speed-note">Selecione várias fotos. O sistema gera prévia, enquadra sem cortar no padrão 10x12, compacta e envia para o Google Drive.</p>' +
+              '<div id="preview_' + idPrefix + '" class="foto-preview-container"></div>' +
+              '<input type="hidden" name="' + idPrefix + '_fotos_urls" id="urls_' + idPrefix + '">' +
+            '</div>' +
+            '<div class="input-group">' +
+              '<label>Vídeos do ambiente (somente links de acesso)</label>' +
+              '<textarea name="' + idPrefix + '_videos_links" rows="2" placeholder="Cole um link por linha. Ex.: link público do Drive, YouTube não listado ou outra plataforma."></textarea>' +
+            '</div>' +
+            '<div class="smart-select-container input-group">' +
+              '<label>Anamnese e Diagnóstico (Busque por categoria ou termo)</label>' +
+              '<div class="smart-tags-area" id="tags_' + idPrefix + '"></div>' +
+              '<input type="text" class="search-input" id="search_' + idPrefix + '" placeholder="🔍 Digite ex: \'Parede\', \'Áreas Sociais\' ou \'Infiltração\'..." onclick="toggleDropdownAnamnese(\'' + idPrefix + '\')" onkeyup="filtrarAnamnese(\'' + idPrefix + '\')">' +
+              '<div class="smart-dropdown" id="dd_' + idPrefix + '">' + opcoesHTML + '</div>' +
+              '<input type="hidden" name="' + idPrefix + '_anamnese" id="hidden_' + idPrefix + '">' +
+            '</div>' +
+            '<div class="grid-2">' +
+              '<div class="input-group"><label>Piso - estado</label><select name="' + idPrefix + '_piso" required><option value="Bom">Bom</option><option value="Regular">Regular</option><option value="Ruim">Ruim</option><option value="Excelente">Excelente</option><option value="N/A">Não se aplica</option></select><textarea name="' + idPrefix + '_piso_obs" rows="2" placeholder="Observação técnica pontual do piso..."></textarea></div>' +
+              '<div class="input-group"><label>Paredes / Pintura - estado</label><select name="' + idPrefix + '_paredes" required><option value="Bom">Bom</option><option value="Regular">Regular</option><option value="Ruim">Ruim</option><option value="Excelente">Excelente</option><option value="N/A">Não se aplica</option></select><textarea name="' + idPrefix + '_paredes_obs" rows="2" placeholder="Observação técnica pontual das paredes/pintura..."></textarea></div>' +
+            '</div>' +
+            '<div class="grid-2">' +
+              '<div class="input-group"><label>Teto / Forro - estado</label><select name="' + idPrefix + '_teto" required><option value="Bom">Bom</option><option value="Regular">Regular</option><option value="Ruim">Ruim</option><option value="Excelente">Excelente</option><option value="N/A">Não se aplica</option></select><textarea name="' + idPrefix + '_teto_obs" rows="2" placeholder="Observação técnica pontual do teto/forro..."></textarea></div>' +
+              '<div class="input-group"><label>Elétrica / Hidráulica - estado</label><select name="' + idPrefix + '_infra" required><option value="Bom">Bom</option><option value="Regular">Regular</option><option value="Ruim">Ruim</option><option value="Excelente">Excelente</option><option value="N/A">Não se aplica</option></select><textarea name="' + idPrefix + '_infra_obs" rows="2" placeholder="Observação técnica pontual das instalações..."></textarea></div>' +
+            '</div>' +
+            '<div class="input-group"><label>Esquadrias (Portas/Janelas) - estado</label><select name="' + idPrefix + '_esquadrias" required><option value="Bom">Bom</option><option value="Regular">Regular</option><option value="Ruim">Ruim</option><option value="Excelente">Excelente</option><option value="N/A">Não se aplica</option></select><textarea name="' + idPrefix + '_esquadrias_obs" rows="2" placeholder="Observação técnica pontual das portas/janelas..."></textarea></div>' +
+            '<div class="input-group"><label>Observação geral do cômodo</label><textarea name="' + idPrefix + '_obs" rows="2" placeholder="Descreva particularidades gerais não mapeadas nos itens acima..."></textarea></div>' +
+          '</div>';
+          stepCounter++;
+        }
+      });
+      
+      container.innerHTML = htmlDinamico;
+      totalPassosDinamicos = stepCounter - totalPassosFixosIniciais - 1;
+
+      var startFinal = stepCounter;
+      finalContainer.innerHTML = '<div class="wizard-step-pane" data-step="' + startFinal + '">' +
+        '<h3>Considerações Finais</h3>' +
+        '<div class="input-group"><label>Parecer Técnico Geral do Vistoriador</label><textarea name="parecer_geral" rows="4" required></textarea></div>' +
+      '</div>' +
+      '<div class="wizard-step-pane" data-step="' + (startFinal + 1) + '">' +
+        '<h3>Validação de Integridade</h3>' +
+        '<p style="font-size:13px; color:var(--warning); margin-bottom:15px;">Ao clicar em Trancar, o sistema enviará a vistoria com todas as anamneses e fotos.</p>' +
+        '<div class="checkbox-item"><input type="checkbox" required> Declaro sob as penas da lei que as informações condizem com o real estado do imóvel.</div>' +
+      '</div>';
+      
+      totalPassos = totalPassosFixosIniciais + totalPassosDinamicos + totalPassosFinais;
+    }
+
+    // --- WIZARD NAVIGATION & VALIDAÇÃO HTML5 ---
+    function atualizarBarraProgresso() {
+      document.getElementById('txt-progresso-etapa').innerText = 'Etapa ' + passoAtual + ' de ' + totalPassos;
+      document.getElementById('wizard-progress-bar').style.width = ((passoAtual / totalPassos) * 100) + '%';
+    }
+
+    function navegarPasso(direcao) {
+      if (direcao === 1) {
+        var etapaAtiva = document.querySelector('.wizard-step-pane[data-step="' + passoAtual + '"]');
+        var camposObrigatorios = etapaAtiva.querySelectorAll('input[required], select[required], textarea[required]');
+        var tudoPreenchido = true;
+        for (var i = 0; i < camposObrigatorios.length; i++) {
+          if (!camposObrigatorios[i].checkValidity()) { camposObrigatorios[i].reportValidity(); tudoPreenchido = false; break; }
+        }
+        if (!tudoPreenchido) return; 
+      }
+
+      if(passoAtual === 5 && direcao === 1) gerarEtapasDinamicas();
+
+      document.querySelector('.wizard-step-pane[data-step="' + passoAtual + '"]').classList.remove('active');
+      passoAtual += direcao;
+      document.querySelector('.wizard-step-pane[data-step="' + passoAtual + '"]').classList.add('active');
+      
+      atualizarBarraProgresso();
+      document.getElementById('btn-wizard-prev').disabled = (passoAtual === 1);
+      if (passoAtual === totalPassos) {
+        document.getElementById('btn-wizard-next').style.display = 'none';
+        document.getElementById('btn-wizard-submit').style.display = 'block';
+      } else {
+        document.getElementById('btn-wizard-next').style.display = 'block';
+        document.getElementById('btn-wizard-submit').style.display = 'none';
+      }
+    }
+
+    function limparPayloadLaudo(obj) {
+      function limparValor(valor, chave) {
+        var k = String(chave || '').toLowerCase();
+        if (k === 'dataurl' || k === 'data_url' || k === 'base64' || k === 'embed' || k === 'foto_data_url') return '';
+        if (typeof valor === 'string') {
+          var s = valor.trim();
+          if (s.indexOf('data:image/') === 0 || s.indexOf('data:video/') === 0) return '';
+          if ((s.charAt(0) === '[' || s.charAt(0) === '{') && s.length < 200000) {
+            try {
+              return JSON.stringify(limparValor(JSON.parse(s), chave));
+            } catch(e) {}
+          }
+          return valor.replace(/data:(image|video)\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '');
+        }
+        if (Array.isArray(valor)) return valor.map(function(item) { return limparValor(item, chave); });
+        if (valor && typeof valor === 'object') {
+          var out = {};
+          Object.keys(valor).forEach(function(kObj) { out[kObj] = limparValor(valor[kObj], kObj); });
+          return out;
+        }
+        return valor;
+      }
+      return limparValor(obj || {}, '');
+    }
+
+    function validarLinksVideosLaudo(obj) {
+      obj = obj || {};
+      var keys = Object.keys(obj);
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        if (!/_videos?_links?$/i.test(k)) continue;
+        var raw = String(obj[k] || '').trim();
+        if (!raw) continue;
+        var links = raw.split(/\r?\n|[,;]/).map(function(item) { return item.trim(); }).filter(Boolean);
+        for (var j = 0; j < links.length; j++) {
+          if (!/^https?:\/\/\S+/i.test(links[j])) {
+            return 'Vídeos devem ser informados somente como links começando por http:// ou https://.';
+          }
+        }
+      }
+      return '';
+    }
+
+    // --- ENVIAR PARA A PLANILHA ---
+    function enviarLaudoFinal() {
+      if (uploadsPendentes > 0) {
+        mostrarToast("Aguarde o envio de todas as fotos terminar!", "var(--danger)");
+        return;
+      }
+
+      var etapaAtiva = document.querySelector('.wizard-step-pane[data-step="' + passoAtual + '"]');
+      var camposObrigatorios = etapaAtiva.querySelectorAll('input[required]');
+      for (var i = 0; i < camposObrigatorios.length; i++) {
+        if (!camposObrigatorios[i].checkValidity()) { camposObrigatorios[i].reportValidity(); return; }
+      }
+
+      var form = document.getElementById('form-vistoria-completo');
+      var formData = new FormData(form);
+      var laudoMap = {};
+      formData.forEach(function(value, key) { laudoMap[key] = value; });
+      laudoMap = limparPayloadLaudo(laudoMap);
+      var erroVideos = validarLinksVideosLaudo(laudoMap);
+      if (erroVideos) {
+        mostrarToast(erroVideos, 'var(--danger)');
+        return;
+      }
+
+      if (editandoLaudoId) {
+        laudoMap.__modoEdicao = 'SIM';
+        laudoMap.__idLaudoEdicao = editandoLaudoId;
+      }
+
+      mostrarToast(editandoLaudoId ? "Salvando nova revisão auditável..." : "Salvando Vistoria e Arquivando JSON...", "var(--warning)");
+      document.getElementById('btn-wizard-submit').disabled = true;
+
+      var runner = google.script.run
+        .withSuccessHandler(function(res) {
+          if(res.sucesso) {
+            mostrarToast(res.msg, "var(--success)");
+            cacheDelLocal('LAUDOS_V3');
+            editandoLaudoId = null;
+            editandoPayloadOriginal = null;
+            var banner = document.getElementById('edit-banner-laudo');
+            if (banner) banner.classList.remove('show');
+            document.getElementById('form-vistoria-completo').style.display = 'none';
+            document.getElementById('wizard-tela-final').style.display = 'block';
+            carregarMeusLaudosDashboard(true);
+          } else {
+            mostrarToast(res.msg, "var(--danger)");
+          }
+          document.getElementById('btn-wizard-submit').disabled = false;
+        })
+        .withFailureHandler(function(err) {
+          mostrarToast('Erro no servidor ao salvar vistoria: ' + (err && err.message ? err.message : err), 'var(--danger)');
+          document.getElementById('btn-wizard-submit').disabled = false;
+        });
+
+      if (editandoLaudoId) {
+        runner.apiAtualizarVistoria(editandoLaudoId, laudoMap);
+      } else {
+        runner.apiSalvarVistoria(laudoMap);
+      }
+    }
+
+    function resetarFormularioVistoria() {
+      editandoLaudoId = null;
+      editandoPayloadOriginal = null;
+      payloadPendenteEdicaoDinamica = null;
+      var banner = document.getElementById('edit-banner-laudo');
+      if (banner) banner.classList.remove('show');
+
+      document.getElementById('form-vistoria-completo').reset();
+      document.getElementById('etapa1_numeroLaudo').value = Math.floor(10000000 + Math.random() * 90000000);
+      document.getElementById('form-vistoria-completo').style.display = 'block';
+      document.getElementById('wizard-tela-final').style.display = 'none';
+      document.querySelectorAll('.wizard-step-pane').forEach(function(el) { el.classList.remove('active'); });
+      document.getElementById('dynamic-steps-container').innerHTML = '';
+      document.getElementById('final-steps-container').innerHTML = '';
+      passoAtual = 1;
+      totalPassos = totalPassosFixosIniciais + totalPassosFinais;
+      document.querySelector('.wizard-step-pane[data-step="1"]').classList.add('active');
+      atualizarBarraProgresso();
+      document.getElementById('btn-wizard-prev').disabled = true;
+      document.getElementById('btn-wizard-next').style.display = 'block';
+      document.getElementById('btn-wizard-submit').style.display = 'none';
+    }
+
+    // --- ROOT ADMIN CONFIGS & OUTROS ---
+    function navegarDashboard(idView, btn, titulo) {
+      cacheSetLocal('ROTA_ATUAL', idView);
+      if(idView === 'dash-inicio') carregarMeusLaudosDashboard(false);
+      if(idView === 'dash-assinaturas') carregarAssinaturasDashboard(false);
+      document.querySelectorAll('.dash-view').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.nav-btn').forEach(function(el) { el.classList.remove('active'); });
+      document.getElementById(idView).classList.add('active');
+      if(btn) btn.classList.add('active');
+      document.getElementById('titulo-pagina').innerText = titulo;
+    }
+    function trocarFormulario(id) { document.getElementById('view-login').style.display = 'none'; document.getElementById('view-registro').style.display = 'none'; document.getElementById(id).style.display = 'block'; }
+    function sairSistema() { usuarioAtual = null; document.getElementById('route-dashboard').classList.remove('active'); document.getElementById('route-auth').classList.add('active'); document.getElementById('log-user').value = ''; document.getElementById('log-pass').value = ''; }
+    
+    function tentarAbrirConfiguracoes(btn) {
+      if (!usuarioPodeAdministrar()) {
+        mostrarToast("Acesso restrito a ADMIN/DESENVOLVEDOR.", "var(--danger)");
+        return;
+      }
+      var chave = prompt("Acesso Administrativo. Insira a Chave Mestra:");
+      if (chave === null) return;
+      if (!chave) { mostrarToast("Chave não informada.", "var(--danger)"); return; }
+      
+      google.script.run.withSuccessHandler(function(res) {
+        if (res.sucesso) {
+          navegarDashboard('dash-configs', btn, "Painel de Configurações Root");
+          carregarControlesDeMembros();
+        } else {
+          mostrarToast("Chave mestra incorreta.", "var(--danger)");
+        }
+      }).validarChaveMestra(chave);
+    }
+    
+    function salvarConfigs() {
+      if (!usuarioPodeAdministrar()) {
+        mostrarToast("Acesso restrito a ADMIN/DESENVOLVEDOR.", "var(--danger)");
+        return;
+      }
+      var chave = prompt("Confirme a chave mestra para salvar configurações:");
+      if (chave === null) return;
+      if (!chave) { mostrarToast("Chave mestra obrigatória.", "var(--danger)"); return; }
+
+      var n = document.getElementById('cfg-nome').value.trim();
+      var logoUi = document.getElementById('cfg-logo-ui') ? document.getElementById('cfg-logo-ui').value.trim() : '';
+      var logoLaudo = document.getElementById('cfg-logo-laudo') ? document.getElementById('cfg-logo-laudo').value.trim() : '';
+      var m = document.getElementById('cfg-manutencao').value === "TRUE";
+      var site = document.getElementById('cfg-site').value.trim();
+      var end = document.getElementById('cfg-endereco').value.trim();
+      var corr = document.getElementById('cfg-corretor').value.trim();
+      var creci = document.getElementById('cfg-creci').value.trim();
+
+      google.script.run.withSuccessHandler(function(res) {
+        mostrarToast(res.msg, res.sucesso ? "var(--success)" : "var(--danger)");
+        if(res.sucesso) {
+          cacheDelLocal('CFG');
+          atualizarConfiguracoesSaaS();
+        }
+      }).salvarConfiguracoesGlobais(n, logoLaudo, m, site, end, corr, creci, logoUi, '', chave);
+    }
+
+    function carregarControlesDeMembros() {
+      document.getElementById('wrapper-usuarios').innerHTML = "<p style='color: var(--text-muted)'>Lendo base de dados...</p>";
+      google.script.run.withSuccessHandler(function(res) {
+        if(res.sucesso) {
+          var html = "";
+          res.dados.forEach(function(u) {
+            var perfilNorm = String(u.perfil || '').toUpperCase();
+            var statusNorm = String(u.status || '').toUpperCase();
+            html += '<div class="user-card"><div><strong>' + sanitizar(u.nome) + ' (@' + sanitizar(u.usuario) + ')</strong><br><span style="font-size:12px; color:var(--text-muted);">' + sanitizar(u.email) + ' | Situação: <b>' + sanitizar(u.status) + '</b></span></div><div style="display:flex; gap:8px; flex-wrap:wrap;"><select id="p-' + u.linha + '" style="background:var(--input-bg); color:white; padding:5px; border-radius:6px; border:1px solid var(--border-color);"><option value="SUPORTE TECNICO"' + (perfilNorm === 'SUPORTE TECNICO' || perfilNorm === 'SUPORTE TÉCNICO' ? ' selected' : '') + '>SUPORTE TECNICO</option><option value="ADMIN"' + (perfilNorm === 'ADMIN' || perfilNorm === 'ADMINISTRADOR' ? ' selected' : '') + '>ADMIN</option><option value="DESENVOLVEDOR"' + (perfilNorm === 'DESENVOLVEDOR' ? ' selected' : '') + '>DESENVOLVEDOR</option></select><select id="s-' + u.linha + '" style="background:var(--input-bg); color:white; padding:5px; border-radius:6px; border:1px solid var(--border-color);"><option value="PENDENTE"' + (statusNorm === 'PENDENTE' ? ' selected' : '') + '>PENDENTE</option><option value="APROVADO"' + (statusNorm === 'APROVADO' ? ' selected' : '') + '>APROVADO</option><option value="BLOQUEADO"' + (statusNorm === 'BLOQUEADO' ? ' selected' : '') + '>BLOQUEADO</option></select><button class="btn" style="padding:5px 10px; font-size:12px; width:auto;" onclick="salvarMembro(' + u.linha + ')">Ok</button></div></div>';
+          });
+          document.getElementById('wrapper-usuarios').innerHTML = html || "<p>Nenhum membro registrado.</p>";
+        }
+      }).getTodosUsuarios();
+    }
+    
+    function salvarMembro(l) {
+      if (!usuarioPodeAdministrar()) {
+        mostrarToast("Acesso restrito a ADMIN/DESENVOLVEDOR.", "var(--danger)");
+        return;
+      }
+      var chave = prompt("Confirme a chave mestra para alterar usuário:");
+      if (chave === null) return;
+      if (!chave) { mostrarToast("Chave mestra obrigatória.", "var(--danger)"); return; }
+      var perf = document.getElementById('p-' + l).value;
+      var stat = document.getElementById('s-' + l).value;
+      google.script.run.withSuccessHandler(function(res) { mostrarToast(res.msg, res.sucesso ? "var(--success)" : "var(--danger)"); if(res.sucesso) carregarControlesDeMembros(); }).alterarMembroCompleto(l, perf, stat, chave);
+    }
+
+    function usuarioPodeAdministrar() {
+      var perfil = usuarioAtual && usuarioAtual.perfil ? String(usuarioAtual.perfil).toUpperCase() : '';
+      return perfil === 'ADMIN' || perfil === 'ADMINISTRADOR' || perfil === 'DESENVOLVEDOR';
+    }
+
+    async function criptografarSenha(senha) { var msgBuffer = new TextEncoder().encode(senha); var hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer); var hashArray = Array.from(new Uint8Array(hashBuffer)); return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join(''); }
+    function mostrarToast(m, c) { var t = document.getElementById('toast'); if(!t) return; clearTimeout(window.__toastTimer); t.innerText = m || ''; t.style.borderLeftColor = c || 'var(--primary)'; t.classList.add('show'); window.__toastTimer = setTimeout(function() { t.classList.remove('show'); }, 3500); }
+
+    function senhaForte(senha) {
+      return senha.length >= 8 &&
+        /[a-z]/.test(senha) &&
+        /[A-Z]/.test(senha) &&
+        /\d/.test(senha) &&
+        /[^A-Za-z0-9]/.test(senha);
+    }
+    
+    async function finalizarCadastro() {
+      var btn = document.getElementById('btn-reg');
+      var nome = document.getElementById('reg-nome').value.trim();
+      var email = document.getElementById('reg-email').value.trim();
+      var usuario = document.getElementById('reg-user').value.trim();
+      var senha = document.getElementById('reg-pass').value;
+      var senhaConfirm = document.getElementById('reg-pass-confirm').value;
+      var nascimento = document.getElementById('reg-nascimento').value || '';
+      var contato = document.getElementById('reg-contato').value.trim() || '';
+      var aceiteLgpd = document.getElementById('reg-lgpd').checked;
+
+      if (!nome || !nascimento || !contato || !email || !usuario || !senha) {
+        mostrarToast("Preencha todos os campos obrigatórios.", "var(--danger)");
+        return;
+      }
+      if (usuario.length < 3) {
+        mostrarToast("Usuário deve ter pelo menos 3 caracteres.", "var(--danger)");
+        return;
+      }
+      if (!senhaForte(senha)) {
+        mostrarToast("Use senha forte: 8+ caracteres com maiúscula, minúscula, número e símbolo.", "var(--danger)");
+        return;
+      }
+      if (senha !== senhaConfirm) {
+        mostrarToast("As senhas não conferem.", "var(--danger)");
+        return;
+      }
+      if (!aceiteLgpd) {
+        mostrarToast("O aceite LGPD é obrigatório.", "var(--danger)");
+        return;
+      }
+
+      var dados = { nome: nome, email: email, usuario: usuario, senhaHash: await criptografarSenha(senha), nascimento: nascimento, contato: contato, aceiteLgpd: true };
+      btn.disabled = true; btn.innerText = "Processando...";
+      google.script.run.withSuccessHandler(function(res) { mostrarToast(res.msg, res.sucesso ? "var(--success)" : "var(--danger)"); if(res.sucesso) trocarFormulario('view-login'); btn.disabled = false; btn.innerText = "Enviar para Análise"; }).registrarUsuario(dados);
+    }
+    
+    async function fazerLogin() {
+      var u = document.getElementById('log-user').value.trim();
+      var p = document.getElementById('log-pass').value;
+      if(!u || !p) return mostrarToast("Preencha as credenciais.","var(--warning)");
+      var btn = document.getElementById('btn-login'); btn.disabled = true; btn.innerText = "Lendo Hash de Segurança...";
+      var hash = await criptografarSenha(p);
+      google.script.run.withSuccessHandler(function(res) {
+        if(res.sucesso) {
+          mostrarToast(res.msg, "var(--success)");
+          usuarioAtual = res;
+          document.getElementById('user-display').innerText = res.nome + ' | Perfil: ' + res.perfil;
+          var btnConfig = document.querySelector('.nav-btn.config');
+          if (btnConfig) btnConfig.style.display = usuarioPodeAdministrar() ? 'block' : 'none';
+          document.getElementById('route-auth').classList.remove('active');
+          document.getElementById('route-dashboard').classList.add('active');
+          carregarMeusLaudosDashboard();
+        } else { mostrarToast(res.msg, "var(--danger)"); }
+        btn.disabled = false; btn.innerText = "Acessar Sistema";
+      }).validarLogin(u, hash);
+    }
+
+    /* PATCH V6 — upload rápido, cache de emissão e fotos sem corte */
+    var pdfsEmEmissaoV6 = {};
+
+    var FOTO_PADRAO_W = 1000;
+    var FOTO_PADRAO_H = 1200;
+
+    function calcularBytesDataUrl(dataUrl) {
+      var base64 = String(dataUrl || '').split(',')[1] || '';
+      return Math.max(0, Math.floor(base64.length * 0.75));
+    }
+
+    function limparFotoParaPayload(item) {
+      item = item || {};
+      return {
+        id: item.id || '',
+        fotoId: item.fotoId || '',
+        ambiente: item.ambiente || '',
+        ambienteCodigo: item.ambienteCodigo || '',
+        item: item.item || '',
+        tipoObservacao: item.tipoObservacao || item.tipo_observacao || '',
+        legendaTecnica: item.legendaTecnica || item.legenda || '',
+        url: item.url || item.driveUrl || item.directViewUrl || '',
+        thumbnailUrl: item.thumbnailUrl || '',
+        hash: item.hash || '',
+        arquivoId: item.arquivoId || item.fileId || '',
+        nome: item.nome || item.nomeArquivo || '',
+        mimeType: item.mimeType || 'image/jpeg',
+        largura: item.largura || item.width || '',
+        altura: item.altura || item.height || '',
+        tamanhoBytes: item.tamanhoBytes || item.bytes || ''
+      };
+    }
+
+    function comprimirImagem(file) {
+      return new Promise(function(resolve) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+          var img = new Image();
+          img.onload = function() {
+            var W = FOTO_PADRAO_W;
+            var H = FOTO_PADRAO_H;
+            var canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            var iw = img.naturalWidth || img.width || W;
+            var ih = img.naturalHeight || img.height || H;
+            var scale = Math.min(W / iw, H / ih);
+            var nw = Math.round(iw * scale);
+            var nh = Math.round(ih * scale);
+            var nx = Math.round((W - nw) / 2);
+            var ny = Math.round((H - nh) / 2);
+            ctx.drawImage(img, nx, ny, nw, nh);
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.64);
+            resolve({ dataUrl: dataUrl, largura: W, altura: H, tamanhoBytes: calcularBytesDataUrl(dataUrl), original: event.target.result });
+          };
+          img.onerror = function() {
+            mostrarToast('Não foi possível compactar uma imagem. Enviarei no formato original.', 'var(--warning)');
+            resolve({ dataUrl: event.target.result, largura: '', altura: '', tamanhoBytes: calcularBytesDataUrl(event.target.result), original: event.target.result });
+          };
+          img.src = event.target.result;
+        };
+      });
+    }
+
+    function atualizarObrigatoriedadeFoto(idPrefix) {
+      var input = document.getElementById('files_' + idPrefix);
+      var hiddenUrls = document.getElementById('urls_' + idPrefix);
+      if (!input) return;
+      var temFotos = lerFotosHidden(hiddenUrls).length > 0;
+      input.required = !editandoLaudoId && !temFotos;
+      input.setCustomValidity('');
+    }
+
+    async function processarFotosAmbiente(idPrefix) {
+      var input = document.getElementById('files_' + idPrefix);
+      var preview = document.getElementById('preview_' + idPrefix);
+      var hiddenUrls = document.getElementById('urls_' + idPrefix);
+      var files = Array.prototype.slice.call(input && input.files ? input.files : []);
+      if (!files.length) return;
+
+      var MAX_FOTOS = 20;
+      if (files.length > MAX_FOTOS) {
+        mostrarToast('Máximo de ' + MAX_FOTOS + ' fotos por ambiente.', 'var(--danger)');
+        input.value = '';
+        return;
+      }
+
+      var urlsAtuais = lerFotosHidden(hiddenUrls);
+      var ambienteEl = document.querySelector('[name="' + idPrefix + '_tipo_ambiente"]');
+      var ambienteNome = ambienteEl ? ambienteEl.value : idPrefix;
+      var concorrencia = 2;
+      var indice = 0;
+      var falhas = 0;
+      uploadsPendentes += files.length;
+      mostrarToast('Mostrando prévia, compactando em 10x12 sem corte e enviando ao Drive...', 'var(--warning)');
+
+      function uploadBackend(base64, nomeArquivo) {
+        return new Promise(function(resolve, reject) {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .uploadImagemVistoria(base64, nomeArquivo);
+        });
+      }
+
+      async function enviarUma(posicao) {
+        var file = files[posicao];
+        var imgId = 'img_' + idPrefix + '_' + Date.now() + '_' + posicao;
+        var nomeArquivo = 'Vistoria_' + idPrefix + '_Foto_' + (posicao + 1) + '.jpg';
+        var previewUrl = '';
+        try { previewUrl = URL.createObjectURL(file); } catch(eUrl) {}
+        if (preview) {
+          preview.insertAdjacentHTML('beforeend',
+            '<div id="wrap_' + imgId + '" class="foto-preview-box">' +
+              '<img src="' + (previewUrl || '') + '">' +
+              '<button type="button" class="foto-delete-btn" onclick="removerFotoAmbiente(\'' + idPrefix + '\', \'' + imgId + '\')">×</button>' +
+              '<div class="foto-loader">Compactando...</div>' +
+            '</div>'
+          );
+        }
+        try {
+          var pacote = await comprimirImagem(file);
+          var wrapCompactando = document.getElementById('wrap_' + imgId);
+          if (wrapCompactando) {
+            wrapCompactando.innerHTML = '<img src="' + pacote.dataUrl + '">' +
+              '<button type="button" class="foto-delete-btn" onclick="removerFotoAmbiente(\'' + idPrefix + '\', \'' + imgId + '\')">×</button>' +
+              '<div class="foto-loader">Drive ' + (posicao + 1) + '/' + files.length + '</div>';
+          }
+
+          var res = await uploadBackend(pacote.dataUrl, nomeArquivo);
+          var wrap = document.getElementById('wrap_' + imgId);
+          if (res && res.sucesso) {
+            var fotoObj = {
+              id: imgId,
+              fotoId: res.fotoId || '',
+              ambiente: ambienteNome || idPrefix,
+              ambienteCodigo: idPrefix,
+              item: 'Registro fotográfico técnico do ambiente',
+              tipoObservacao: 'Registro fotográfico técnico do ambiente',
+              legendaTecnica: 'Imagem enquadrada sem corte no padrão 10x12, vinculada ao ambiente ' + (ambienteNome || idPrefix) + ' e às observações técnicas do laudo.',
+              url: res.url || res.driveUrl || '',
+              thumbnailUrl: res.thumbnailUrl || '',
+              directViewUrl: res.directViewUrl || '',
+              hash: res.hash || '',
+              arquivoId: res.fileId || res.arquivoId || '',
+              nome: res.nome || nomeArquivo,
+              mimeType: res.mimeType || 'image/jpeg',
+              largura: pacote.largura,
+              altura: pacote.altura,
+              tamanhoBytes: res.tamanhoBytes || pacote.tamanhoBytes
+            };
+            urlsAtuais.push(fotoObj);
+            hiddenUrls.value = JSON.stringify(urlsAtuais.map(limparFotoParaPayload));
+            atualizarObrigatoriedadeFoto(idPrefix);
+            if (wrap) {
+              wrap.innerHTML = '<img src="' + pacote.dataUrl + '">' +
+                '<button type="button" class="foto-delete-btn" onclick="removerFotoAmbiente(\'' + idPrefix + '\', \'' + imgId + '\')">×</button>' +
+                '<div class="foto-ok-badge">✓ Drive 10x12</div>';
+            }
+          } else {
+            falhas++;
+            var msgFalha = res && res.msg ? res.msg : 'Falha no Drive';
+            if (wrap) wrap.innerHTML = '<img src="' + pacote.dataUrl + '"><div class="foto-loader" style="background:rgba(239,68,68,.85)" title="' + sanitizar(msgFalha) + '">Falha</div>';
+          }
+        } catch (err) {
+          falhas++;
+          var alvo = document.getElementById('wrap_' + imgId);
+          var msgErro = err && err.message ? err.message : String(err || 'Falha');
+          if (alvo) alvo.innerHTML += '<div class="foto-loader" style="background:rgba(239,68,68,.85)" title="' + sanitizar(msgErro) + '">Falha</div>';
+        } finally {
+          uploadsPendentes = Math.max(0, uploadsPendentes - 1);
+          if (previewUrl) {
+            try { URL.revokeObjectURL(previewUrl); } catch(eRevoke) {}
+          }
+        }
+      }
+
+      async function trabalhador() {
+        while (indice < files.length) {
+          var atual = indice++;
+          await enviarUma(atual);
+        }
+      }
+
+      var workers = [];
+      for (var w = 0; w < Math.min(concorrencia, files.length); w++) workers.push(trabalhador());
+      await Promise.all(workers);
+      input.value = '';
+      atualizarObrigatoriedadeFoto(idPrefix);
+      mostrarToast(falhas ? 'Upload concluído com ' + falhas + ' falha(s).' : 'Fotos compactadas e sincronizadas no Drive.', falhas ? 'var(--warning)' : 'var(--success)');
+    }
+
+    function emitirLaudoPdf(idLaudo) {
+      if (!idLaudo) {
+        mostrarToast('ID do laudo não localizado.', 'var(--danger)');
+        return;
+      }
+      if (pdfsEmEmissaoV6[idLaudo]) {
+        mostrarToast('Este PDF já está em emissão. Aguarde alguns segundos.', 'var(--warning)');
+        return;
+      }
+      pdfsEmEmissaoV6[idLaudo] = true;
+      mostrarToast('Emitindo PDF documental. Usarei cache se o laudo não mudou...', 'var(--warning)');
+      google.script.run.withSuccessHandler(function(res) {
+        delete pdfsEmEmissaoV6[idLaudo];
+        if (res && res.sucesso) {
+          mostrarToast(res.cachePdf ? 'PDF aberto do cache.' : 'PDF gerado com sucesso.', 'var(--success)');
+          cacheDelLocal('LAUDOS_V3');
+          if (res.url) window.open(res.url, '_blank');
+          carregarMeusLaudosDashboard(true);
+        } else {
+          mostrarToast((res && res.msg) ? res.msg : 'Erro ao gerar PDF.', 'var(--danger)');
+        }
+      }).withFailureHandler(function(err) {
+        delete pdfsEmEmissaoV6[idLaudo];
+        mostrarToast('Erro no servidor ao gerar PDF: ' + (err && err.message ? err.message : err), 'var(--danger)');
+      }).apiEmitirLaudoPdf(idLaudo);
+    }
+
+    window.fazerLogin = fazerLogin;
+    window.trocarFormulario = trocarFormulario;
+    window.finalizarCadastro = finalizarCadastro;
+    window.emitirLaudoPdf = emitirLaudoPdf;
+    window.abrirPdfExistente = abrirPdfExistente;
+    window.abrirAssinaturaLaudo = abrirAssinaturaLaudo;
+    window.criarAssinaturaEletronica = criarAssinaturaEletronica;
+    window.carregarAssinaturasDashboard = carregarAssinaturasDashboard;
+    window.verDetalhesAssinatura = verDetalhesAssinatura;
+    window.cancelarAssinatura = cancelarAssinatura;
+    window.processarFotosAmbiente = processarFotosAmbiente;
+    window.removerFotoAmbiente = removerFotoAmbiente;
+    window.carregarMeusLaudosDashboard = carregarMeusLaudosDashboard;
+    window.abrirEdicaoLaudo = abrirEdicaoLaudo;
+  </script>
+</body>
+</html>
