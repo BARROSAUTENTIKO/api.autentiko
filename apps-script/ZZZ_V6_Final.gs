@@ -3,7 +3,7 @@
    Performance, cache, upload compacto e laudo documental.
    ========================================================= */
 
-var AUTENTIKO_PATCH_VERSION_V6 = 'V10_RASCUNHO_FOTOS_AUDITADAS_20260702';
+var AUTENTIKO_PATCH_VERSION_V6 = 'V11_EDICAO_LAUDO_SERIALIZAVEL_20260702';
 var AUT_MODELO_PDF_VERSION_V6 = 'MODELO_PALMER_RELATORIO_TECNICO_RASCUNHO_20260702';
 var PALMER_LAUDO_LOGO_OFICIAL = 'https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png?sha=665353158D30C2184BF1061A92EFD6D7F3492226D31A76FA46E01CC2620ED47A';
 var PALMER_MARCADAGUA_OFICIAL = PALMER_LAUDO_LOGO_OFICIAL;
@@ -600,22 +600,151 @@ function AUT_EDIT_IDS_CANDIDATOS_FINAL_(idLaudo) {
   }
   add(raw);
   add(raw.replace(/^LAUDO[\s:#-]*/i, ''));
+  add(raw.replace(/^PROCESSO[\s:#-]*/i, ''));
+  add(raw.replace(/^REVISAO[\s:#-]*/i, ''));
   var digits = raw.replace(/\D+/g, '');
   add(digits);
   return out;
 }
 
-function AUT_LOCALIZAR_LAUDO_EDICAO_FINAL_(ss, idLaudo) {
-  var candidatos = AUT_EDIT_IDS_CANDIDATOS_FINAL_(idLaudo);
+function AUT_ID_EDICAO_EQ_V8_(a, b) {
+  var sa = String(a === null || a === undefined ? '' : a).trim();
+  var sb = String(b === null || b === undefined ? '' : b).trim();
+  if (!sa || !sb) return false;
+  if (sa === sb) return true;
+  if (sa.toUpperCase() === sb.toUpperCase()) return true;
+  var da = sa.replace(/\D+/g, '');
+  var db = sb.replace(/\D+/g, '');
+  return !!(da && db && da === db);
+}
+
+function AUT_LAUDO_MATCH_ROW_V8_(headers, row, idBusca) {
+  var obj = AUT_ROW_TO_OBJ_(headers, row);
+  var candidatos = [
+    AUT_GET_(obj, ['ID_LAUDO']),
+    AUT_GET_(obj, ['ID_PROCESSO']),
+    AUT_GET_(obj, ['NUMERO_LAUDO']),
+    AUT_GET_(obj, ['CODIGO_LAUDO']),
+    AUT_GET_(obj, ['ID_DOCUMENTO']),
+    row[0],
+    row[1],
+    row[2]
+  ];
+  for (var c = 0; c < candidatos.length; c++) {
+    if (AUT_ID_EDICAO_EQ_V8_(candidatos[c], idBusca)) return true;
+  }
+  return false;
+}
+
+function AUT_LOCALIZAR_REGISTRO_LAUDO_V8_(ss, idBusca) {
+  var sheets = AUT_REGISTRO_SHEETS_(ss);
+  for (var s = 0; s < sheets.length; s++) {
+    var sh = sheets[s];
+    if (!sh || sh.getLastRow() < 2) continue;
+    var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+    var headers = values[0];
+    for (var r = 1; r < values.length; r++) {
+      if (!AUT_LAUDO_MATCH_ROW_V8_(headers, values[r], idBusca)) continue;
+      var rawObj = AUT_ROW_TO_OBJ_(headers, values[r]);
+      var achado = { sheet: sh, rowNumber: r + 1, row: values[r], rowObjRaw: rawObj, rowObj: rawObj, headers: headers };
+      achado.payload = AUT_RECUPERAR_PAYLOAD_DE_ACHADO_(achado);
+      achado.rowObj = AUT_NORMALIZAR_ROWOBJ_LAUDO_(achado);
+      return achado;
+    }
+  }
+  return null;
+}
+
+function AUT_LOCALIZAR_PROCESSO_V8_(ss, idBusca) {
+  var sh = ss.getSheetByName('PROCESSOS');
+  if (!sh || sh.getLastRow() < 2) return null;
+  var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+  var headers = values[0];
+  for (var r = 1; r < values.length; r++) {
+    if (!AUT_LAUDO_MATCH_ROW_V8_(headers, values[r], idBusca)) continue;
+    var obj = AUT_ROW_TO_OBJ_(headers, values[r]);
+    return { sheet: sh, rowNumber: r + 1, row: values[r], rowObj: obj, headers: headers };
+  }
+  return null;
+}
+
+function AUT_GARANTIR_REGISTRO_A_PARTIR_PROCESSO_V8_(ss, idBusca) {
+  var proc = AUT_LOCALIZAR_PROCESSO_V8_(ss, idBusca);
+  if (!proc) return null;
+  var idReal = AUT_GET_(proc.rowObj, ['ID_LAUDO', 'ID_PROCESSO']) || idBusca;
+  var existente = AUT_LOCALIZAR_REGISTRO_LAUDO_V8_(ss, idReal) ||
+    AUT_LOCALIZAR_REGISTRO_LAUDO_V8_(ss, AUT_GET_(proc.rowObj, ['NUMERO_LAUDO', 'CODIGO_LAUDO']));
+  if (existente) return existente;
+
+  var payload = AUT_PAYLOAD_DE_PROCESSO_V5_(proc.rowObj);
+  var registro = AUT_MONTAR_REGISTRO_LAUDO_(payload, idReal, AUT_GET_(proc.rowObj, ['HASH_LAUDO']) || '');
+  registro.PDF_URL = AUT_GET_(proc.rowObj, ['PDF_URL']) || '';
+  registro.PDF_HASH = AUT_GET_(proc.rowObj, ['PDF_HASH']) || '';
+  registro.HASH_DOCUMENTO = AUT_GET_(proc.rowObj, ['HASH_DOCUMENTO']) || '';
+  registro.MANIFESTO_URL = AUT_GET_(proc.rowObj, ['MANIFESTO_URL']) || '';
+  AUT_APPEND_OBJ_(AUT_REGISTRO_SHEET_(ss), registro);
+  AUT_INVALIDAR_CACHES_();
+  return AUT_LOCALIZAR_REGISTRO_LAUDO_V8_(ss, idReal) || AUT_LOCALIZAR_REGISTRO_LAUDO_V8_(ss, registro.NUMERO_LAUDO);
+}
+
+function AUT_LOCALIZAR_LAUDO_EDICAO_FINAL_(ss, idLaudo, numeroFallback) {
+  var candidatos = [];
+  AUT_EDIT_IDS_CANDIDATOS_FINAL_(idLaudo).forEach(function(v) { candidatos.push(v); });
+  AUT_EDIT_IDS_CANDIDATOS_FINAL_(numeroFallback).forEach(function(v) { candidatos.push(v); });
+  var seen = {};
+  candidatos = candidatos.filter(function(v) {
+    v = String(v || '').trim();
+    if (!v || seen[v]) return false;
+    seen[v] = true;
+    return true;
+  });
   for (var i = 0; i < candidatos.length; i++) {
-    var achado = AUT_LOCALIZAR_LAUDO_(ss, candidatos[i]);
+    var achado = AUT_LOCALIZAR_REGISTRO_LAUDO_V8_(ss, candidatos[i]);
     if (achado) return { achado: achado, idUsado: candidatos[i] };
   }
   for (var p = 0; p < candidatos.length; p++) {
-    var criado = AUT_GARANTIR_REGISTRO_A_PARTIR_PROCESSO_V5_(ss, candidatos[p]);
+    var criado = AUT_GARANTIR_REGISTRO_A_PARTIR_PROCESSO_V8_(ss, candidatos[p]);
     if (criado) return { achado: criado, idUsado: candidatos[p] };
   }
   return null;
+}
+
+function AUT_FORMAT_DATE_CLIENTE_V8_(date, key) {
+  if (!(date instanceof Date)) return date;
+  var tz = Session.getScriptTimeZone();
+  var nk = AUT_NORM_(key || '');
+  if (nk.indexOf('HORA') >= 0) return Utilities.formatDate(date, tz, 'HH:mm');
+  if (nk.indexOf('DATA_REGISTRO') >= 0 || nk.indexOf('CRIADO') >= 0 || nk.indexOf('ATUALIZADO') >= 0 || nk.indexOf('EDITADO') >= 0 || nk.indexOf('GERADO') >= 0) {
+    return Utilities.formatDate(date, tz, 'dd/MM/yyyy HH:mm:ss');
+  }
+  return Utilities.formatDate(date, tz, 'yyyy-MM-dd');
+}
+
+function AUT_JSON_CLIENTE_SEGURO_V8_(valor, key) {
+  if (valor instanceof Date) return AUT_FORMAT_DATE_CLIENTE_V8_(valor, key);
+  if (valor === null || valor === undefined) return '';
+  if (Array.isArray(valor)) {
+    return valor.map(function(item) { return AUT_JSON_CLIENTE_SEGURO_V8_(item, key); });
+  }
+  if (typeof valor === 'object') {
+    var out = {};
+    Object.keys(valor).forEach(function(k) {
+      out[k] = AUT_JSON_CLIENTE_SEGURO_V8_(valor[k], k);
+    });
+    return out;
+  }
+  return valor;
+}
+
+function AUT_NORMALIZAR_PAYLOAD_EDICAO_CLIENTE_V8_(payload) {
+  payload = AUT_JSON_CLIENTE_SEGURO_V8_(payload || {}, '');
+  if (payload.etapa1_data && payload.etapa1_data instanceof Date) {
+    payload.etapa1_data = AUT_FORMAT_DATE_CLIENTE_V8_(payload.etapa1_data, 'etapa1_data');
+  }
+  if (payload.etapa1_hora && payload.etapa1_hora instanceof Date) {
+    payload.etapa1_hora = AUT_FORMAT_DATE_CLIENTE_V8_(payload.etapa1_hora, 'etapa1_hora');
+  }
+  return payload;
 }
 
 function AUT_COMPLETAR_PAYLOAD_EDICAO_FINAL_(payload, rowObj, idLaudo) {
@@ -695,13 +824,13 @@ function AUT_RECONSTRUIR_AMBIENTES_EDICAO_FINAL_(ss, payload, idLaudo, numeroLau
   return payload;
 }
 
-function apiObterLaudoParaEdicao(idLaudo) {
+function apiObterLaudoParaEdicao(idLaudo, numeroFallback) {
   try {
     garantirEstruturaDoSistema();
     if (!idLaudo) return { sucesso: false, ok: false, msg: 'ID do processo/laudo não informado.' };
 
     var ss = AUT_SS_FAST_();
-    var localizado = AUT_LOCALIZAR_LAUDO_EDICAO_FINAL_(ss, idLaudo);
+    var localizado = AUT_LOCALIZAR_LAUDO_EDICAO_FINAL_(ss, idLaudo, numeroFallback);
     if (!localizado || !localizado.achado) {
       return { sucesso: false, ok: false, msg: 'Não encontrei o laudo/processo "' + idLaudo + '" para edição. Atualize consultas e tente novamente.' };
     }
@@ -715,6 +844,9 @@ function apiObterLaudoParaEdicao(idLaudo) {
     payload = AUT_RECONSTRUIR_AMBIENTES_EDICAO_FINAL_(ss, payload, idReal, numero);
     var fotos = AUT_FOTOS_LAUDO_LEVES_FINAL_(ss, idReal, numero);
     var statusLaudo = AUT_STATUS_LAUDO_ATUAL_V7_(ss, idReal, numero, rowObj, payload);
+    payload = AUT_NORMALIZAR_PAYLOAD_EDICAO_CLIENTE_V8_(payload);
+    rowObj = AUT_JSON_CLIENTE_SEGURO_V8_(rowObj, '');
+    fotos = AUT_JSON_CLIENTE_SEGURO_V8_(fotos, '');
 
     return {
       sucesso: true,
@@ -727,15 +859,39 @@ function apiObterLaudoParaEdicao(idLaudo) {
       rowObj: rowObj,
       fotos: fotos,
       modoEdicaoLeve: true,
-      idBusca: localizado.idUsado
+      idBusca: localizado.idUsado,
+      serializado: true
     };
   } catch (e) {
     return { sucesso: false, ok: false, msg: 'Erro ao abrir edição: ' + e.message, erro: e.message };
   }
 }
 
-function abrirLaudoParaEdicao(idLaudo) {
-  return apiObterLaudoParaEdicao(idLaudo);
+function abrirLaudoParaEdicao(idLaudo, numeroFallback) {
+  return apiObterLaudoParaEdicao(idLaudo, numeroFallback);
+}
+
+function apiDiagnosticarEdicaoLaudo(idLaudo, numeroFallback) {
+  try {
+    garantirEstruturaDoSistema();
+    var ss = AUT_SS_FAST_();
+    var localizado = AUT_LOCALIZAR_LAUDO_EDICAO_FINAL_(ss, idLaudo, numeroFallback);
+    var proc = AUT_LOCALIZAR_PROCESSO_V8_(ss, idLaudo) || AUT_LOCALIZAR_PROCESSO_V8_(ss, numeroFallback);
+    return {
+      sucesso: true,
+      idInformado: String(idLaudo || ''),
+      numeroFallback: String(numeroFallback || ''),
+      achouRegistro: !!(localizado && localizado.achado),
+      idUsado: localizado ? localizado.idUsado : '',
+      abaRegistro: localizado && localizado.achado && localizado.achado.sheet ? localizado.achado.sheet.getName() : '',
+      linhaRegistro: localizado && localizado.achado ? localizado.achado.rowNumber : '',
+      achouProcesso: !!proc,
+      linhaProcesso: proc ? proc.rowNumber : '',
+      msg: localizado && localizado.achado ? 'Laudo localizável para edição.' : 'Laudo não localizado pelo diagnóstico.'
+    };
+  } catch (e) {
+    return { sucesso: false, msg: 'Erro no diagnóstico de edição: ' + e.message, erro: e.message };
+  }
 }
 
 function doGet(e) {

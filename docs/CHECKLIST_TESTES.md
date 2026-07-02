@@ -71,3 +71,10 @@
 - Confirmar que o rascunho/revisão não mostra a foto removida na prévia nem no PDF final.
 - Remover uma foto recém enviada antes de salvar e confirmar que o arquivo temporário é enviado para exclusão no Drive.
 - Conferir `AUDITORIA` com ação de salvamento contendo `fotosRemovidas`.
+
+## 10. Abrir laudo para edição
+- No painel geral, clicar em `Editar` em um laudo registrado.
+- Confirmar que o assistente abre na etapa 1 com número, data, partes e endereço preenchidos.
+- Clicar em `Continuar rascunho` em um rascunho e confirmar que ele abre sem gerar PDF.
+- Testar laudo cujo painel mostra ID e número diferentes; o fallback por número deve localizar o registro.
+- Se falhar, executar `apiDiagnosticarEdicaoLaudo(id, numero)` no Apps Script para confirmar aba/linha encontrada.

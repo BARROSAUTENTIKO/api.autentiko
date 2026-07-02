@@ -18,8 +18,8 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `47`
-- Deployment: `AUTENTIKO auditoria de fotos e rascunhos 2026-07-02`
+- Versao publicada: `48`
+- Deployment: `AUTENTIKO correcao abrir edicao laudo 2026-07-02`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -57,6 +57,13 @@ Arquivos principais:
 - O backend ignora a lista tecnica de fotos removidas ao extrair fotos para evitar imagem fantasma no PDF.
 - Exclusao de upload temporario no Drive registra auditoria.
 - Auditoria de salvar rascunho, finalizar rascunho e criar revisao inclui quantidade de fotos removidas.
+
+## Correcao abrir edicao @48
+
+- O retorno de `apiObterLaudoParaEdicao` agora converte datas da planilha para strings seguras antes de voltar ao `google.script.run`.
+- O botao `Editar/Continuar rascunho` envia ID e numero do laudo como fallback.
+- A busca do backend aceita ID, numero, codigo e ID de documento com comparacao tolerante a espacos e formatos.
+- Adicionada API administrativa de diagnostico `apiDiagnosticarEdicaoLaudo`.
 
 ## Revisao de seguranca @43
 

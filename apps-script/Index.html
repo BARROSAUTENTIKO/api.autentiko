@@ -703,7 +703,7 @@ input[type="number"]::placeholder,
             '<p><b>Endereço:</b> ' + sanitizar(endereco) + '</p>' +
             '</div><div class="consulta-actions">' +
             '<span class="sync-chip">Sincronizado</span>' +
-            '<button type="button" class="btn btn-edit-laudo" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.abrirEdicaoLaudo(\'' + jsStr(editId) + '\')"' + disabledAction + '>' + (isDraft ? 'Continuar rascunho' : 'Editar') + '</button>' +
+            '<button type="button" class="btn btn-edit-laudo" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.abrirEdicaoLaudo(\'' + jsStr(editId) + '\', \'' + jsStr(numero) + '\')"' + disabledAction + '>' + (isDraft ? 'Continuar rascunho' : 'Editar') + '</button>' +
             (pdfUrl ? '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px; background:#0f766e;" onclick="abrirPdfExistente(\'' + jsStr(pdfUrl) + '\')">Abrir PDF</button>' : '') +
             '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px;" onclick="window.emitirLaudoPdf(\'' + jsStr(editId) + '\')"' + lockedAction + '>Emitir Laudo PDF</button>' +
             '<button type="button" class="btn" style="width:auto; padding:9px 12px; font-size:12px; background:#1e3a8a;" onclick="window.abrirAssinaturaLaudo(\'' + jsStr(editId) + '\')"' + lockedAction + '>Assinatura</button>' +
@@ -865,14 +865,16 @@ input[type="number"]::placeholder,
       });
     }
 
-    function abrirEdicaoLaudo(idLaudo) {
+    function abrirEdicaoLaudo(idLaudo, numeroLaudoFallback) {
       idLaudo = String(idLaudo || '').trim();
+      numeroLaudoFallback = String(numeroLaudoFallback || '').trim();
       if (!idLaudo || idLaudo === 'undefined' || idLaudo === 'null') {
         mostrarToast('ID do laudo não localizado.', 'var(--danger)');
         return;
       }
 
       mostrarToast('Abrindo laudo para edição...', 'var(--warning)');
+      cacheDelLocal('LAUDOS_V3');
       google.script.run
         .withSuccessHandler(function(res) {
           if (!res || !res.sucesso) {
@@ -918,7 +920,7 @@ input[type="number"]::placeholder,
         .withFailureHandler(function(err) {
           mostrarToast('Erro ao abrir edição: ' + (err && err.message ? err.message : err), 'var(--danger)');
         })
-        .apiObterLaudoParaEdicao(idLaudo);
+        .apiObterLaudoParaEdicao(idLaudo, numeroLaudoFallback);
     }
 
     function abrirPdfExistente(url) {
