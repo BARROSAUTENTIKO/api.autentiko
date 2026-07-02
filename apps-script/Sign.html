@@ -158,6 +158,46 @@
       font-size: 13px;
       font-weight: 700;
     }
+    .prompt span.ok {
+      background: #ecfdf5;
+      border-color: #86efac;
+      color: #166534;
+    }
+    .prompt span.active {
+      background: #fff7ed;
+      border-color: #fdba74;
+      color: #9a3412;
+    }
+    .consent-box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px 12px;
+      margin: 12px 0;
+    }
+    .consent-box .check {
+      margin: 9px 0;
+      font-size: 13px;
+    }
+    .quality-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .quality-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px;
+      background: #fff;
+      font-size: 12px;
+      color: #334155;
+    }
+    .quality-item strong {
+      display: block;
+      font-size: 13px;
+      color: #0f172a;
+    }
     .timeline {
       list-style: none;
       padding: 0;
@@ -212,21 +252,35 @@
 
         <div id="step-evidence" class="step">
           <h2>2. Evidencias e aceite</h2>
-          <p class="small">O sistema tentara registrar contexto tecnico, geolocalizacao consentida, validacao do aparelho por passkey/WebAuthn e um video curto do rosto.</p>
+          <p class="small">O sistema so inicia a coleta apos autorizacao expressa. A camera fara verificacao tecnica de luz, presenca de rosto humano quando suportado pelo navegador, e movimentos guiados para reduzir risco de assinatura por imagem estatica.</p>
           <div class="check">
             <input id="aceite" type="checkbox">
             <span>Declaro que sou o signatario indicado, que li/recebi o laudo e autorizo o uso das evidencias para compor a trilha de auditoria desta assinatura.</span>
+          </div>
+          <div class="consent-box">
+            <strong>Autorizacoes de coleta desta assinatura</strong>
+            <div class="check"><input id="consent-contexto" type="checkbox"><span>Autorizo coletar dados tecnicos do navegador, aparelho, IP publico mascarado/hash e horario para auditoria.</span></div>
+            <div class="check"><input id="consent-geo" type="checkbox"><span>Autorizo solicitar geolocalizacao aproximada pelo navegador, ciente de que posso negar pelo sistema operacional.</span></div>
+            <div class="check"><input id="consent-camera" type="checkbox"><span>Autorizo usar camera e microfone para foto, video curto e desafio de movimentos.</span></div>
+            <div class="check"><input id="consent-face" type="checkbox"><span>Autorizo a verificacao tecnica local de luz, rosto e movimento. Esta verificacao nao substitui biometria certificada.</span></div>
+            <div class="check"><input id="consent-drive" type="checkbox"><span>Autorizo armazenar as evidencias protegidas no Drive restrito do sistema e gravar seus hashes no manifesto.</span></div>
           </div>
           <button class="secondary" onclick="coletarContexto()">Coletar contexto e localizacao</button>
           <button class="secondary" onclick="validarPasskey()">Validar aparelho com passkey</button>
           <button onclick="abrirCamera()">Abrir camera</button>
           <video id="video" playsinline muted></video>
-          <div class="prompt">
-            <span>Olhe para a camera</span>
-            <span>Pisque naturalmente</span>
-            <span>Sorria por 1 segundo</span>
-            <span>Gire levemente o rosto</span>
+          <div class="quality-grid">
+            <div class="quality-item"><strong id="q-light">Luz</strong><span id="q-light-detail">Nao analisada</span></div>
+            <div class="quality-item"><strong id="q-face">Rosto</strong><span id="q-face-detail">Nao analisado</span></div>
+            <div class="quality-item"><strong id="q-motion">Movimento</strong><span id="q-motion-detail">Nao analisado</span></div>
           </div>
+          <div class="prompt" id="challenge-list">
+            <span data-challenge="centralizar">Centralize o rosto</span>
+            <span data-challenge="direita">Mova levemente para a direita</span>
+            <span data-challenge="esquerda">Mova levemente para a esquerda</span>
+            <span data-challenge="expressao">Pisque e sorria</span>
+          </div>
+          <button id="btn-challenge" class="secondary" onclick="executarDesafioVida()" disabled>Validar luz, rosto e movimentos</button>
           <button id="btn-record" class="success" onclick="gravarEvidencias()" disabled>Gravar video e enviar evidencias</button>
           <div id="evidence-status" class="status warn">Aguardando coleta de evidencias.</div>
         </div>
@@ -263,6 +317,9 @@
     var passkey = null;
     var streamAtual = null;
     var evidenciasOk = false;
+    var livenessResultado = null;
+    var faceDetector = null;
+    var monitorCameraTimer = null;
 
     function $(id) { return document.getElementById(id); }
     function showStep(id) {
@@ -287,6 +344,50 @@
     function escapeHtml(v) {
       return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
         return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+    function consentimentos() {
+      return {
+        aceiteGeral: !!($('aceite') && $('aceite').checked),
+        contexto: !!($('consent-contexto') && $('consent-contexto').checked),
+        geolocalizacao: !!($('consent-geo') && $('consent-geo').checked),
+        cameraMicrofone: !!($('consent-camera') && $('consent-camera').checked),
+        verificacaoFaceMovimento: !!($('consent-face') && $('consent-face').checked),
+        driveRestrito: !!($('consent-drive') && $('consent-drive').checked),
+        registradoEm: new Date().toISOString()
+      };
+    }
+    function consentimentosBasicosOk() {
+      var c = consentimentos();
+      return c.aceiteGeral && c.contexto && c.geolocalizacao && c.cameraMicrofone && c.verificacaoFaceMovimento && c.driveRestrito;
+    }
+    function explicarConsentimentoFaltante() {
+      var c = consentimentos();
+      if (!c.aceiteGeral) return 'Marque a declaracao principal de aceite.';
+      if (!c.contexto) return 'Autorize a coleta de dados tecnicos do navegador e aparelho.';
+      if (!c.geolocalizacao) return 'Autorize a solicitacao de geolocalizacao para auditoria.';
+      if (!c.cameraMicrofone) return 'Autorize o uso de camera e microfone para a evidencia.';
+      if (!c.verificacaoFaceMovimento) return 'Autorize a verificacao tecnica de luz, rosto e movimentos.';
+      if (!c.driveRestrito) return 'Autorize o armazenamento das evidencias no Drive restrito.';
+      return '';
+    }
+    function atualizarQualidade(id, titulo, detalhe, ok) {
+      var h = $(id);
+      var d = $(id + '-detail');
+      if (h) {
+        h.textContent = titulo;
+        h.style.color = ok ? 'var(--ok)' : 'var(--bad)';
+      }
+      if (d) d.textContent = detalhe;
+    }
+    function marcarDesafio(id, estado) {
+      document.querySelectorAll('#challenge-list span').forEach(function(el) {
+        if (el.getAttribute('data-challenge') === id) {
+          el.classList.toggle('active', estado === 'active');
+          el.classList.toggle('ok', estado === 'ok');
+        } else if (estado === 'active') {
+          el.classList.remove('active');
+        }
       });
     }
     function gasValidarLink() {
@@ -354,9 +455,13 @@
         .catch(function() { return ''; });
     }
     function coletarContexto() {
+      var c = consentimentos();
+      if (!c.contexto || !c.geolocalizacao) {
+        return statusBox('evidence-status', 'Autorize contexto tecnico e geolocalizacao antes da coleta.', 'bad');
+      }
       statusBox('evidence-status', 'Coletando navegador, IP e geolocalizacao...', 'warn');
       Promise.all([getIp(), getGeo()]).then(function(parts) {
-        contexto = { ipPublico: parts[0], geolocation: parts[1], device: deviceInfo(), coletadoEm: new Date().toISOString() };
+        contexto = { ipPublico: parts[0], geolocation: parts[1], device: deviceInfo(), consentimentos: c, coletadoEm: new Date().toISOString() };
         google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'CONTEXTO_COLETADO', contexto);
         timeline('Contexto tecnico coletado');
         statusBox('evidence-status', 'Contexto coletado. Agora valide o aparelho ou grave as evidencias.', 'ok');
@@ -366,14 +471,14 @@
       var token = $('token').value.trim();
       if (!token) return statusBox('token-status', 'Informe o token recebido por e-mail.', 'bad');
       $('btn-token').disabled = true;
-      var ctx = { device: deviceInfo(), tokenInformadoEm: new Date().toISOString() };
+      var ctx = { tokenInformadoEm: new Date().toISOString() };
       google.script.run.withSuccessHandler(function(res) {
         $('btn-token').disabled = false;
         if (res && res.sucesso) {
           timeline('Token validado');
           statusBox('token-status', res.msg || 'Token validado.', 'ok');
           showStep('step-evidence');
-          coletarContexto();
+          statusBox('evidence-status', 'Marque as autorizacoes e clique em coletar contexto/localizacao.', 'warn');
         } else {
           statusBox('token-status', res && res.msg ? res.msg : 'Token invalido.', 'bad');
           timeline('Falha de token registrada');
@@ -402,6 +507,9 @@
       };
     }
     function validarPasskey() {
+      if (!($('consent-contexto') && $('consent-contexto').checked)) {
+        return statusBox('evidence-status', 'Autorize a coleta tecnica do aparelho antes de validar passkey.', 'bad');
+      }
       if (!window.PublicKeyCredential || !navigator.credentials || !navigator.credentials.create) {
         passkey = null;
         timeline('Passkey nao suportada');
@@ -438,20 +546,268 @@
         google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'PASSKEY_FALHOU', { erro: err && err.message ? err.message : String(err) });
       });
     }
+    function esperar(ms) {
+      return new Promise(function(resolve) { setTimeout(resolve, ms); });
+    }
+    function prepararFaceDetector() {
+      try {
+        if (!faceDetector && 'FaceDetector' in window) {
+          faceDetector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+        }
+      } catch (e) {
+        faceDetector = null;
+      }
+      return faceDetector;
+    }
+    function quadroDaCamera() {
+      var video = $('video');
+      if (!video || !video.videoWidth || !video.videoHeight) throw new Error('Camera ainda nao entregou imagem valida.');
+      var canvas = document.createElement('canvas');
+      canvas.width = 160;
+      canvas.height = 120;
+      var ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return { canvas: canvas, data: ctx.getImageData(0, 0, canvas.width, canvas.height), width: canvas.width, height: canvas.height };
+    }
+    function metricasImagem(frame) {
+      var d = frame.data.data;
+      var total = d.length / 4;
+      var soma = 0;
+      var soma2 = 0;
+      var escuros = 0;
+      var claros = 0;
+      var peleCentro = 0;
+      var centro = 0;
+      var centroSoma = 0;
+      var centroSoma2 = 0;
+      for (var i = 0, p = 0; i < d.length; i += 4, p++) {
+        var r = d[i], g = d[i + 1], b = d[i + 2];
+        var y = 0.299 * r + 0.587 * g + 0.114 * b;
+        soma += y;
+        soma2 += y * y;
+        if (y < 35) escuros++;
+        if (y > 240) claros++;
+        var x = p % frame.width;
+        var yy = Math.floor(p / frame.width);
+        var noCentro = x > frame.width * 0.27 && x < frame.width * 0.73 && yy > frame.height * 0.16 && yy < frame.height * 0.84;
+        if (noCentro) {
+          centro++;
+          centroSoma += y;
+          centroSoma2 += y * y;
+          var max = Math.max(r, g, b);
+          var min = Math.min(r, g, b);
+          var pelePossivel = r > 35 && g > 25 && b > 18 && max - min > 8 && r > b * 0.75 && g > b * 0.65;
+          if (pelePossivel) peleCentro++;
+        }
+      }
+      var media = soma / total;
+      var contraste = Math.sqrt(Math.max(0, soma2 / total - media * media));
+      var centroMedia = centro ? centroSoma / centro : 0;
+      var centroContraste = centro ? Math.sqrt(Math.max(0, centroSoma2 / centro - centroMedia * centroMedia)) : 0;
+      var m = {
+        lumaMedia: Math.round(media),
+        contraste: Math.round(contraste),
+        escuroPct: escuros / total,
+        claroPct: claros / total,
+        centroLuma: Math.round(centroMedia),
+        centroContraste: Math.round(centroContraste),
+        peleCentroPct: centro ? peleCentro / centro : 0
+      };
+      m.luzOk = m.lumaMedia >= 55 && m.lumaMedia <= 225 && m.contraste >= 18 && m.escuroPct < 0.65 && m.claroPct < 0.42;
+      return m;
+    }
+    function detectarRosto(frame, metricas) {
+      var detector = prepararFaceDetector();
+      if (detector) {
+        return detector.detect(frame.canvas).then(function(faces) {
+          var face = faces && faces[0];
+          if (!face) return { ok: false, metodo: 'FaceDetector', detalhe: 'Nenhum rosto detectado.' };
+          var box = face.boundingBox || {};
+          var area = ((box.width || 0) * (box.height || 0)) / (frame.width * frame.height);
+          var central = (box.x || 0) > frame.width * 0.05 &&
+            ((box.x || 0) + (box.width || 0)) < frame.width * 0.95 &&
+            (box.y || 0) > 0 &&
+            ((box.y || 0) + (box.height || 0)) < frame.height;
+          return {
+            ok: area >= 0.045 && area <= 0.72 && central,
+            metodo: 'FaceDetector',
+            detalhe: 'Rostos: ' + faces.length + ' | area: ' + Math.round(area * 100) + '%',
+            areaPct: Math.round(area * 100)
+          };
+        }).catch(function(err) {
+          return { ok: false, metodo: 'FaceDetector_ERRO', detalhe: err && err.message ? err.message : String(err) };
+        });
+      }
+      var heuristicaOk = metricas.luzOk &&
+        metricas.centroContraste >= 13 &&
+        metricas.centroLuma >= 45 &&
+        metricas.centroLuma <= 230 &&
+        (metricas.peleCentroPct >= 0.015 || metricas.centroContraste >= 24);
+      return Promise.resolve({
+        ok: heuristicaOk,
+        metodo: 'heuristica_local',
+        detalhe: 'Detector nativo ausente. Luz/contraste/centro avaliados localmente.',
+        peleCentroPct: Math.round(metricas.peleCentroPct * 1000) / 10
+      });
+    }
+    function diferencaFrames(a, b) {
+      var da = a.data.data;
+      var db = b.data.data;
+      var total = da.length / 4;
+      var mudancas = 0;
+      var somaX = 0;
+      var somaY = 0;
+      for (var i = 0, p = 0; i < da.length; i += 4, p++) {
+        var ya = 0.299 * da[i] + 0.587 * da[i + 1] + 0.114 * da[i + 2];
+        var yb = 0.299 * db[i] + 0.587 * db[i + 1] + 0.114 * db[i + 2];
+        if (Math.abs(ya - yb) > 18) {
+          mudancas++;
+          somaX += p % a.width;
+          somaY += Math.floor(p / a.width);
+        }
+      }
+      return {
+        score: mudancas / total,
+        centroX: mudancas ? somaX / mudancas : a.width / 2,
+        centroY: mudancas ? somaY / mudancas : a.height / 2
+      };
+    }
+    function medirMovimento(ms) {
+      var inicio = Date.now();
+      var anterior = quadroDaCamera();
+      var scores = [];
+      var centros = [];
+      return new Promise(function(resolve) {
+        function passo() {
+          var atual = quadroDaCamera();
+          var diff = diferencaFrames(anterior, atual);
+          scores.push(diff.score);
+          centros.push(diff.centroX);
+          anterior = atual;
+          if (Date.now() - inicio >= ms) {
+            var maxScore = Math.max.apply(Math, scores);
+            var mediaScore = scores.reduce(function(a, b) { return a + b; }, 0) / Math.max(1, scores.length);
+            var minX = Math.min.apply(Math, centros);
+            var maxX = Math.max.apply(Math, centros);
+            resolve({ maxScore: maxScore, mediaScore: mediaScore, amplitudeX: maxX - minX, amostras: scores.length });
+          } else {
+            setTimeout(passo, 220);
+          }
+        }
+        setTimeout(passo, 220);
+      });
+    }
+    function analisarCameraAtual() {
+      try {
+        var frame = quadroDaCamera();
+        var metricas = metricasImagem(frame);
+        return detectarRosto(frame, metricas).then(function(face) {
+          return { metricas: metricas, face: face };
+        });
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    }
+    function atualizarStatusCamera(res) {
+      var m = res.metricas || {};
+      var f = res.face || {};
+      atualizarQualidade('q-light', 'Luz', 'Luminosidade ' + (m.lumaMedia || '-') + ' | contraste ' + (m.contraste || '-'), !!m.luzOk);
+      atualizarQualidade('q-face', 'Rosto', (f.metodo || '-') + ': ' + (f.detalhe || '-'), !!f.ok);
+    }
+    function executarDesafioVida() {
+      if (!streamAtual) return statusBox('evidence-status', 'Abra a camera antes de validar.', 'bad');
+      if (!consentimentosBasicosOk()) return statusBox('evidence-status', explicarConsentimentoFaltante(), 'bad');
+      $('btn-challenge').disabled = true;
+      $('btn-record').disabled = true;
+      livenessResultado = null;
+      statusBox('evidence-status', 'Analisando luz e rosto...', 'warn');
+      analisarCameraAtual().then(function(base) {
+        atualizarStatusCamera(base);
+        if (!base.metricas.luzOk || !base.face.ok) {
+          livenessResultado = {
+            aprovado: false,
+            motivo: 'LUZ_OU_ROSTO_INVALIDO',
+            luz: base.metricas,
+            rosto: base.face,
+            consentimentos: consentimentos(),
+            registradoEm: new Date().toISOString()
+          };
+          google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'LIVENESS_REPROVADO', livenessResultado);
+          $('btn-challenge').disabled = false;
+          statusBox('evidence-status', 'Ajuste a luz e centralize o rosto antes de continuar.', 'bad');
+          return null;
+        }
+        var fases = [
+          { id: 'centralizar', msg: 'Centralize o rosto e olhe para a camera.', ms: 1200, min: 0.001 },
+          { id: 'direita', msg: 'Mova levemente o rosto para a direita.', ms: 1700, min: 0.010 },
+          { id: 'esquerda', msg: 'Mova levemente o rosto para a esquerda.', ms: 1700, min: 0.010 },
+          { id: 'expressao', msg: 'Pisque e sorria por um instante.', ms: 1700, min: 0.008 }
+        ];
+        var resultados = [];
+        var corrente = Promise.resolve();
+        fases.forEach(function(fase) {
+          corrente = corrente.then(function() {
+            marcarDesafio(fase.id, 'active');
+            statusBox('evidence-status', fase.msg, 'warn');
+            return medirMovimento(fase.ms).then(function(mov) {
+              var ok = mov.maxScore >= fase.min || mov.amplitudeX >= 10;
+              resultados.push({ id: fase.id, ok: ok, maxScore: mov.maxScore, mediaScore: mov.mediaScore, amplitudeX: mov.amplitudeX, amostras: mov.amostras });
+              marcarDesafio(fase.id, ok ? 'ok' : '');
+            });
+          });
+        });
+        return corrente.then(function() {
+          var movimentosOk = resultados.filter(function(r) { return r.ok; }).length >= 3;
+          livenessResultado = {
+            aprovado: base.metricas.luzOk && base.face.ok && movimentosOk,
+            metodoFace: base.face.metodo,
+            luz: base.metricas,
+            rosto: base.face,
+            movimentos: resultados,
+            consentimentos: consentimentos(),
+            registradoEm: new Date().toISOString()
+          };
+          atualizarQualidade('q-motion', 'Movimento', resultados.filter(function(r) { return r.ok; }).length + ' de ' + resultados.length + ' fases aprovadas', movimentosOk);
+          google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, livenessResultado.aprovado ? 'LIVENESS_APROVADO' : 'LIVENESS_REPROVADO', livenessResultado);
+          if (livenessResultado.aprovado) {
+            $('btn-record').disabled = false;
+            timeline('Luz, rosto e movimentos validados');
+            statusBox('evidence-status', 'Validacao tecnica aprovada. Agora grave e envie as evidencias.', 'ok');
+          } else {
+            $('btn-challenge').disabled = false;
+            statusBox('evidence-status', 'Movimentos insuficientes. Repita o desafio com boa luz e rosto centralizado.', 'bad');
+          }
+        });
+      }).catch(function(err) {
+        $('btn-challenge').disabled = false;
+        statusBox('evidence-status', err && err.message ? err.message : String(err), 'bad');
+      });
+    }
     function abrirCamera() {
+      if (!consentimentosBasicosOk()) {
+        return statusBox('evidence-status', explicarConsentimentoFaltante(), 'bad');
+      }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         statusBox('evidence-status', 'Camera nao suportada neste navegador.', 'bad');
         google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'CAMERA_NAO_SUPORTADA', { device: deviceInfo() });
         return;
       }
+      statusBox('evidence-status', 'O navegador vai solicitar permissao de camera e microfone.', 'warn');
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: true })
         .then(function(stream) {
+          try { if (streamAtual) streamAtual.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
           streamAtual = stream;
           $('video').srcObject = stream;
-          $('video').play();
-          $('btn-record').disabled = false;
+          $('video').play().catch(function() {});
+          $('btn-record').disabled = true;
+          $('btn-challenge').disabled = false;
+          livenessResultado = null;
           timeline('Camera aberta');
-          statusBox('evidence-status', 'Camera aberta. Siga os movimentos e grave o video.', 'ok');
+          google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'CAMERA_AUTORIZADA', { consentimentos: consentimentos(), device: deviceInfo() });
+          statusBox('evidence-status', 'Camera aberta. Valide luz, rosto e movimentos antes de gravar.', 'ok');
+          setTimeout(function() {
+            analisarCameraAtual().then(atualizarStatusCamera).catch(function() {});
+          }, 900);
         })
         .catch(function(err) {
           statusBox('evidence-status', 'Nao foi possivel acessar camera/microfone: ' + (err && err.message ? err.message : err), 'bad');
@@ -485,6 +841,14 @@
     }
     function gravarEvidencias() {
       if (!streamAtual) return statusBox('evidence-status', 'Abra a camera antes de gravar.', 'bad');
+      if (!consentimentosBasicosOk()) return statusBox('evidence-status', explicarConsentimentoFaltante(), 'bad');
+      if (!livenessResultado || !livenessResultado.aprovado) {
+        return statusBox('evidence-status', 'Valide luz, rosto e movimentos antes de gravar.', 'bad');
+      }
+      if (!window.MediaRecorder) {
+        google.script.run.apiSignRegistrarEventoPublico(AUT_SIGN_ID, AUT_SIGN_NONCE, 'MEDIARECORDER_NAO_SUPORTADO', { device: deviceInfo() });
+        return statusBox('evidence-status', 'Gravacao de video nao suportada neste navegador.', 'bad');
+      }
       $('btn-record').disabled = true;
       statusBox('evidence-status', 'Gravando video por alguns segundos...', 'warn');
       var chunks = [];
@@ -506,10 +870,11 @@
         }
         statusBox('evidence-status', 'Enviando foto e video protegidos...', 'warn');
         blobToDataUrl(blob).then(function(videoDataUrl) {
-          return uploadEvidencia('FOTO_ROSTO', foto, { contexto: contexto, tipo: 'foto_final' })
+          var metaComum = { contexto: contexto, consentimentos: consentimentos(), liveness: livenessResultado };
+          return uploadEvidencia('FOTO_ROSTO', foto, Object.assign({ tipo: 'foto_final' }, metaComum))
             .then(function(r1) {
               if (!r1 || !r1.sucesso) throw new Error(r1 && r1.msg ? r1.msg : 'Falha no envio da foto.');
-              return uploadEvidencia('VIDEO_ROSTO', videoDataUrl, { contexto: contexto, duracaoSegundos: 6, movimentos: ['olhar', 'piscar', 'sorrir', 'girar_rosto'] });
+              return uploadEvidencia('VIDEO_ROSTO', videoDataUrl, Object.assign({ duracaoSegundos: 6, movimentos: ['centralizar_rosto', 'mover_direita', 'mover_esquerda', 'piscar_sorrir'] }, metaComum));
             });
         }).then(function(r2) {
           if (!r2 || !r2.sucesso) throw new Error(r2 && r2.msg ? r2.msg : 'Falha no envio do video.');
@@ -529,6 +894,8 @@
     }
     function concluirAssinatura() {
       if (!$('aceite').checked) return statusBox('finish-status', 'Marque o aceite para concluir.', 'bad');
+      if (!consentimentosBasicosOk()) return statusBox('finish-status', explicarConsentimentoFaltante(), 'bad');
+      if (!livenessResultado || !livenessResultado.aprovado) return statusBox('finish-status', 'A validacao de luz, rosto e movimentos e obrigatoria.', 'bad');
       if (!evidenciasOk) return statusBox('finish-status', 'Envie as evidencias antes de concluir.', 'bad');
       $('btn-finish').disabled = true;
       statusBox('finish-status', 'Selando assinatura e manifesto...', 'warn');
@@ -552,7 +919,9 @@
       }).apiSignConcluir(AUT_SIGN_ID, AUT_SIGN_NONCE, {
         aceite: true,
         contexto: contexto,
-        passkey: passkey
+        passkey: passkey,
+        consentimentos: consentimentos(),
+        liveness: livenessResultado
       });
     }
     window.addEventListener('load', function() {
