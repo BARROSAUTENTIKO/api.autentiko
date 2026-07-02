@@ -1000,8 +1000,8 @@ input[type="number"]::placeholder,
         html += '<div style="margin-top:8px; padding:8px; border:1px solid var(--border-color); border-radius:8px;">' +
           '<b>' + sanitizar(l.nome || l.papel) + '</b><br>' +
           '<span>E-mail: ' + (l.emailEnviado ? 'enviado' : 'não enviado') + '</span><br>' +
-          '<span>Token administrativo: <b>' + sanitizar(l.token || '') + '</b></span><br>' +
-          '<a href="' + sanitizar(l.link || '') + '" target="_blank">Abrir link de assinatura</a>' +
+          '<span>Convite protegido: token e link ficam restritos ao e-mail do signatário.</span>' +
+          (l.msgEmail ? '<br><span style="color:var(--danger);">Falha: ' + sanitizar(l.msgEmail) + '</span>' : '') +
           '</div>';
       });
       box.innerHTML = html;
