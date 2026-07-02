@@ -118,6 +118,66 @@
       color: #1e3a8a;
       font-size: 9.5px;
     }
+    .section-band {
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid #1d4ed8;
+      background: #ffffff;
+      padding: 8px 10px;
+      margin: 8px 0;
+      page-break-inside: avoid;
+    }
+    .band-title {
+      font-size: 9px;
+      text-transform: uppercase;
+      color: #1e3a8a;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .summary-grid {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 6px;
+      margin: 4px -6px 4px -6px;
+      page-break-inside: avoid;
+    }
+    .summary-grid td {
+      width: 33.33%;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      padding: 8px;
+      vertical-align: top;
+    }
+    .summary-title {
+      font-size: 8.8px;
+      text-transform: uppercase;
+      color: #1d4ed8;
+      font-weight: bold;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 3px;
+      margin-bottom: 5px;
+    }
+    .summary-line {
+      margin: 2px 0;
+      font-size: 9.2px;
+    }
+    .summary-label {
+      color: #64748b;
+      font-weight: bold;
+    }
+    .summary-value {
+      color: #111827;
+      font-weight: bold;
+    }
+    .status-pill {
+      display: inline-block;
+      border: 1px solid #86efac;
+      background: #f0fdf4;
+      color: #166534;
+      padding: 2px 6px;
+      font-size: 8.5px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
     .env-card {
       border: 1px solid #cbd5e1;
       margin: 8px 0 10px 0;
@@ -582,6 +642,7 @@
   var historicoEdicao = (typeof historicoAlteracoes !== 'undefined' && historicoAlteracoes) ? historicoAlteracoes : (pick(['HISTORICO_ALTERACOES']) || payloadSafe.__historico_alteracoes || '');
   var editadoDeId = pick(['EDITADO_DE_ID']) || payloadSafe.__editado_de_id || '';
   var statusRevisao = pick(['REVISAO_STATUS']) || (editadoDeId ? 'VIGENTE_REVISAO' : 'VIGENTE');
+  var statusLaudo = payloadSafe.__statusLaudo || pick(['STATUS']) || (String(statusRevisao || '').indexOf('RASCUNHO') >= 0 ? 'RASCUNHO' : 'REGISTRADO');
   var logoInline = (typeof logoPalmerDataUri !== 'undefined' && logoPalmerDataUri) ? logoPalmerDataUri : '';
   var marcaInline = (typeof marcaDaguaPalmerDataUri !== 'undefined' && marcaDaguaPalmerDataUri) ? marcaDaguaPalmerDataUri : '';
   var logoSrc = imgSrc(logoInline || cfgSafe.logoLaudoBase64 || LOGO_PALMER_OFICIAL_ANEXADA || cfgSafe.logoLaudoPublica || cfgSafe.logoLaudoRaw || FALLBACK_LOGO) || FALLBACK_LOGO;
@@ -744,27 +805,68 @@
   </div>
 
   <div class="doc-note">
-    Este documento registra de forma técnica, descritiva e organizada as condições aparentes do imóvel no momento da vistoria.
-    O conteúdo está estruturado por identificação documental, partes, imóvel, ambientes, componentes avaliados,
-    observações pontuais, diagnósticos/anamnese e evidências fotográficas vinculadas.
+    Este documento registra, em formato técnico e administrativo, as condições aparentes do imóvel no momento da vistoria.
+    A leitura foi organizada em quadro executivo, identificação das partes, dados do imóvel, ambientes avaliados,
+    observações técnicas, evidências fotográficas, fundamentação legal e assinaturas.
   </div>
 
-  <div class="criterio">
-    Critério documental: laudo emitido em papel A4, fonte Arial, seções numeradas, identificação das partes,
-    descrição objetiva dos ambientes, registro fotográfico padronizado sem corte de imagem e campos de assinatura
-    para ciência das responsabilidades de entrada e saída do imóvel.
+  <h2>1. Quadro executivo do laudo</h2>
+  <table class="summary-grid">
+    <tr>
+      <td>
+        <div class="summary-title">Controle documental</div>
+        <div class="summary-line"><span class="summary-label">Laudo:</span> <span class="summary-value"><?= txt(numeroLaudo) ?></span></div>
+        <div class="summary-line"><span class="summary-label">Status:</span> <span class="status-pill"><?= txt(statusLaudo) ?></span></div>
+        <div class="summary-line"><span class="summary-label">Revisão:</span> <?= txt(statusRevisao) ?></div>
+        <? if (idDoc) { ?><div class="summary-line"><span class="summary-label">Documento:</span> <?= txt(idDoc) ?></div><? } ?>
+      </td>
+      <td>
+        <div class="summary-title">Vistoria</div>
+        <div class="summary-line"><span class="summary-label">Tipo:</span> <?= txt(tipoVistoria) ?></div>
+        <div class="summary-line"><span class="summary-label">Data:</span> <?= txt(dataVistoria) ?> <? if (horaVistoria) { ?>às <?= txt(horaVistoria) ?><? } ?></div>
+        <div class="summary-line"><span class="summary-label">Vistoriador:</span> <?= txt(vistoriador) ?></div>
+        <div class="summary-line"><span class="summary-label">Estado geral:</span> <?= txt(estadoImovel) ?></div>
+      </td>
+      <td>
+        <div class="summary-title">Imóvel</div>
+        <div class="summary-line"><span class="summary-label">Categoria:</span> <?= txt(categoriaImovel) ?></div>
+        <div class="summary-line"><span class="summary-label">Locação:</span> <?= txt(tipoLocacao) ?><? if (locacaoDias) { ?> - <?= txt(locacaoDias) ?> dia(s)<? } ?></div>
+        <div class="summary-line"><span class="summary-label">Ambientes:</span> <?= txt(ambientes.length) ?></div>
+        <div class="summary-line"><span class="summary-label">Fotos:</span> <?= txt(fotosUnificadas.length) ?></div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="section-band">
+    <div class="band-title">Critério documental e padrão de organização</div>
+    Laudo emitido em papel A4, fonte Arial, seções numeradas, identificação das partes, descrição objetiva dos ambientes,
+    registro fotográfico padronizado sem corte de imagem e campos de assinatura para ciência das responsabilidades de
+    entrada e saída do imóvel.
   </div>
 
-  <h2>1. Identificação e controle documental</h2>
+  <h2>2. Partes envolvidas e contato</h2>
   <?!= tabelaCompacta([
-    { label: 'Número do laudo', valor: numeroLaudo },
-    { label: 'Data da vistoria', valor: dataVistoria },
-    { label: 'Hora da vistoria', valor: horaVistoria },
-    { label: 'Vistoriador responsável', valor: vistoriador },
-    { label: 'Tipo de vistoria', valor: tipoVistoria },
-    { label: 'Status de revisão', valor: statusRevisao },
-    { label: 'ID do documento emitido', valor: idDoc }
+    { label: 'Proprietário', valor: proprietario },
+    { label: 'CPF do proprietário', valor: cpfProprietario },
+    { label: 'Locatário', valor: locatario },
+    { label: 'CPF do locatário', valor: cpfLocatario },
+    { label: 'Contato', valor: contato },
+    { label: 'E-mail', valor: email }
   ]) ?>
+
+  <h2>3. Identificação do imóvel e parâmetros da vistoria</h2>
+  <?!= tabelaCompacta([
+    { label: 'Endereço completo', valor: endereco },
+    { label: 'Categoria do imóvel', valor: categoriaImovel },
+    { label: 'Tipo de vistoria', valor: tipoVistoria },
+    { label: 'Tipo de locação', valor: tipoLocacao },
+    { label: 'Quantidade de dias', valor: locacaoDias },
+    { label: 'Estado geral inicial', valor: estadoImovel },
+    { label: 'Data', valor: dataVistoria },
+    { label: 'Hora', valor: horaVistoria },
+    { label: 'Vistoriador', valor: vistoriador }
+  ]) ?>
+
   <? if (manifesto || qrManifesto) { ?>
     <table class="manifest-table">
       <tr>
@@ -778,25 +880,6 @@
       <? if (hashDocumento) { ?><tr><th>Hash para conferência</th><td<? if (qrManifesto) { ?> colspan="2"<? } ?> class="hash-text"><?= txt(hashDocumento) ?></td></tr><? } ?>
     </table>
   <? } ?>
-
-  <h2>2. Partes envolvidas</h2>
-  <?!= tabelaCompacta([
-    { label: 'Proprietário', valor: proprietario },
-    { label: 'CPF do proprietário', valor: cpfProprietario },
-    { label: 'Locatário', valor: locatario },
-    { label: 'CPF do locatário', valor: cpfLocatario },
-    { label: 'Contato', valor: contato },
-    { label: 'E-mail', valor: email }
-  ]) ?>
-
-  <h2>3. Identificação do imóvel</h2>
-  <?!= tabelaCompacta([
-    { label: 'Endereço completo', valor: endereco },
-    { label: 'Categoria do imóvel', valor: categoriaImovel },
-    { label: 'Tipo de locação', valor: tipoLocacao },
-    { label: 'Quantidade de dias', valor: locacaoDias },
-    { label: 'Estado geral inicial', valor: estadoImovel }
-  ]) ?>
 
   <? if (itensEntrega.length) { ?>
     <h2>4. Itens entregues, infraestrutura e condições gerais</h2>
