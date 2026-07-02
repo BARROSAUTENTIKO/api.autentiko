@@ -403,9 +403,9 @@ function apiSignCriarSessao(idLaudo, signatarios, posicoes, usuario) {
         papel: papel,
         nome: s.nome || '',
         email: s.email || '',
-        link: link,
-        token: token,
-        emailEnviado: emailRes.enviado
+        emailMascarado: AUT_SIGN_MASCARAR_EMAIL_(s.email || ''),
+        emailEnviado: emailRes.enviado,
+        msgEmail: emailRes.msg || ''
       });
     }
     AUT_SIGN_EVENTO_(idAssinatura, '', 'SESSAO_CRIADA', criadoPor, {
@@ -488,8 +488,17 @@ function apiSignVerificarToken(idAssinatura, nonce, token, contexto) {
     if (!tok) return { sucesso: false, msg: 'Token nao localizado.' };
     var shTok = AUT_SIGN_SHEET_('TOKENS_ASSINATURA');
     var tentativas = Number(tok.TENTATIVAS || 0) + 1;
+    if (String(tok.STATUS || '').toUpperCase() === 'BLOQUEADO' || Number(tok.TENTATIVAS || 0) >= 5) {
+      AUT_SIGN_SET_ROW_(shTok, tok.__rowNumber, { STATUS: 'BLOQUEADO', ULTIMO_ERRO: 'LIMITE_TENTATIVAS' });
+      AUT_SIGN_EVENTO_(idAssinatura, sign.ID_SIGNATARIO, 'TOKEN_BLOQUEADO_TENTATIVAS', 'SIGNATARIO', contexto || {});
+      return { sucesso: false, msg: 'Token bloqueado por excesso de tentativas. Solicite novo convite.' };
+    }
     if (String(tok.HASH_TOKEN || '') !== AUT_HASH_(String(token || '').trim())) {
-      AUT_SIGN_SET_ROW_(shTok, tok.__rowNumber, { TENTATIVAS: tentativas, ULTIMO_ERRO: 'TOKEN_INVALIDO' });
+      AUT_SIGN_SET_ROW_(shTok, tok.__rowNumber, {
+        STATUS: tentativas >= 5 ? 'BLOQUEADO' : tok.STATUS,
+        TENTATIVAS: tentativas,
+        ULTIMO_ERRO: tentativas >= 5 ? 'LIMITE_TENTATIVAS' : 'TOKEN_INVALIDO'
+      });
       AUT_SIGN_EVENTO_(idAssinatura, sign.ID_SIGNATARIO, 'TOKEN_INVALIDO', 'SIGNATARIO', contexto || {});
       return { sucesso: false, msg: 'Token incorreto.' };
     }
