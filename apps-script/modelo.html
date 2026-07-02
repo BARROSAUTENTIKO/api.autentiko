@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4; margin: 1.6cm 1.6cm 1.6cm 2.2cm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+      font-size: 10.8px;
+      line-height: 1.45;
+      background: #ffffff;
+    }
+    .watermark {
+      position: fixed;
+      top: 32%;
+      left: 11%;
+      width: 78%;
+      text-align: center;
+      opacity: 0.045;
+      z-index: -1;
+    }
+    .watermark img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+    }
+    .header {
+      width: 100%;
+      border-bottom: 3px solid #1d4ed8;
+      padding-bottom: 8px;
+      margin-bottom: 9px;
+      page-break-inside: avoid;
+    }
+    .header-table { width: 100%; border-collapse: collapse; margin: 0; }
+    .header-table td { border: 0; padding: 0; vertical-align: middle; }
+    .logo-cell { width: 156px; }
+    .logo {
+      width: 146px;
+      height: 108px;
+      object-fit: contain;
+      border: 0;
+      background: #ffffff;
+      display: block;
+      padding: 0;
+    }
+    .company-name {
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .doc-subtitle {
+      color: #334155;
+      font-size: 9.5px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .doc-meta {
+      margin-top: 6px;
+      font-size: 9px;
+      color: #475569;
+    }
+    h1 {
+      color: #1e3a8a;
+      font-size: 20px;
+      line-height: 1.15;
+      margin: 0 0 4px 0;
+      letter-spacing: 0;
+    }
+    h2 {
+      color: #1d4ed8;
+      font-size: 13px;
+      border-bottom: 1px solid #bfdbfe;
+      padding-bottom: 4px;
+      margin: 12px 0 7px 0;
+      page-break-after: avoid;
+    }
+    h3 {
+      color: #0f172a;
+      font-size: 11px;
+      margin: 10px 0 6px 0;
+      page-break-after: avoid;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    td, th {
+      border: 1px solid #cbd5e1;
+      padding: 5px 7px;
+      vertical-align: top;
+      word-break: break-word;
+      font-size: 9.5px;
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      text-align: right;
+      width: 29%;
+      font-weight: bold;
+      border-right: 2px solid #94a3b8;
+    }
+    .muted { color: #64748b; font-size: 9.5px; }
+    .small { font-size: 8.5px; }
+    .box {
+      border: 1px solid #dbeafe;
+      background: #f8fafc;
+      padding: 7px;
+      margin-top: 6px;
+    }
+    .doc-note {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      padding: 7px;
+      margin: 6px 0 8px 0;
+      color: #1e3a8a;
+      font-size: 9.5px;
+    }
+    .env-card {
+      border: 1px solid #cbd5e1;
+      margin: 8px 0 10px 0;
+      page-break-inside: avoid;
+    }
+    .env-head {
+      background: #e0f2fe;
+      border-bottom: 1px solid #bae6fd;
+      padding: 8px 10px;
+      color: #0f172a;
+      font-weight: bold;
+    }
+    .env-code {
+      display: inline-block;
+      min-width: 58px;
+      margin-right: 8px;
+      color: #1d4ed8;
+      font-weight: bold;
+    }
+    .env-body { padding: 7px 8px; }
+    .tags { margin-top: 4px; }
+    .tag {
+      display: inline-block;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+      padding: 2px 5px;
+      margin: 0 4px 4px 0;
+      font-size: 8.5px;
+    }
+    .observation {
+      border-left: 3px solid #2563eb;
+      background: #f8fafc;
+      padding: 7px 8px;
+      margin-top: 7px;
+      color: #334155;
+    }
+    .photos {
+      margin-top: 8px;
+      font-size: 0;
+    }
+    .photo-card {
+      display: block;
+      width: 10cm;
+      margin: 0 auto 12px auto;
+      vertical-align: top;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      font-size: 8.5px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+    }
+    .photo {
+      width: 10cm;
+      height: 12cm;
+      object-fit: contain;
+      border-bottom: 1px solid #cbd5e1;
+      display: block;
+      background: #ffffff;
+    }
+    .photo-caption {
+      font-size: 8.2px;
+      color: #334155;
+      padding: 5px 6px;
+      line-height: 1.2;
+    }
+    .caption-row { margin-bottom: 3px; }
+    .caption-label {
+      color: #0f172a;
+      font-weight: bold;
+    }
+    .responsabilidades {
+      width: 100%;
+      margin-top: 10px;
+      page-break-inside: avoid;
+      border-collapse: separate;
+      border-spacing: 10px 0;
+    }
+    .responsabilidades td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      width: 50%;
+      vertical-align: top;
+      background: #ffffff;
+    }
+    .responsabilidade-titulo {
+      color: #1e3a8a;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .responsabilidade-texto {
+      min-height: 132px;
+      text-align: justify;
+      color: #111827;
+    }
+    .assinatura-dupla {
+      width: 100%;
+      margin-top: 22px;
+      border-collapse: separate;
+      border-spacing: 8px 0;
+    }
+    .assinatura-dupla td {
+      border: 0;
+      width: 50%;
+      padding: 0;
+      vertical-align: bottom;
+    }
+    .assinatura-responsabilidade {
+      margin-top: 30px;
+      border-top: 1px solid #111827;
+      padding-top: 7px;
+      font-size: 9.5px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .assinatura-identificacao {
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 8.5px;
+      text-align: center;
+    }
+    .assinaturas-eletronicas {
+      margin-top: 12px;
+      page-break-inside: avoid;
+    }
+    .assinaturas-eletronicas h3 {
+      margin: 0 0 8px 0;
+      color: #0f172a;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .assinatura-selo-grid {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+    }
+    .assinatura-selo-grid td {
+      width: 50%;
+      border: 1px solid #94a3b8;
+      padding: 8px;
+      vertical-align: top;
+      background: #ffffff;
+    }
+    .assinatura-selo {
+      min-height: 86px;
+      position: relative;
+    }
+    .selo-topo {
+      font-size: 8px;
+      color: #1d4ed8;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .selo-nome {
+      color: #0f172a;
+      font-size: 10.5px;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+    .selo-linha {
+      font-size: 8px;
+      color: #334155;
+      line-height: 1.28;
+      word-break: break-word;
+    }
+    .selo-hash {
+      font-family: Consolas, monospace;
+      font-size: 7px;
+      color: #475569;
+      word-break: break-all;
+      margin-top: 4px;
+    }
+    .footer {
+      margin-top: 12px;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 8px;
+      font-size: 8.5px;
+      color: #475569;
+    }
+    .legal-box {
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      padding: 8px 10px;
+      margin-top: 8px;
+      text-align: justify;
+    }
+    .legal-box p { margin: 0 0 6px 0; }
+    .criterio {
+      background: #f8fafc;
+      border-left: 3px solid #1d4ed8;
+      padding: 6px 7px;
+      margin: 7px 0;
+      text-align: justify;
+    }
+    .manifest-table th { width: 130px; }
+    .compact-table { table-layout: fixed; }
+    .compact-table th {
+      width: 13%;
+      text-align: left;
+      font-size: 8.6px;
+      padding: 4px 5px;
+    }
+    .compact-table td {
+      width: 20.33%;
+      font-size: 8.8px;
+      padding: 4px 5px;
+    }
+    .qr-cell {
+      width: 110px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .qr-img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      border: 1px solid #cbd5e1;
+      padding: 3px;
+      background: #ffffff;
+    }
+    .hash-text {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8.4px;
+      word-break: break-all;
+    }
+    .video-list {
+      margin: 6px 0 2px;
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      font-size: 9px;
+    }
+    .video-list a { color: #1d4ed8; word-break: break-all; }
+    .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+  </style>
+</head>
+<body>
+<?
+  var FALLBACK_LOGO = 'data:image/svg+xml;base64,' + Utilities.base64Encode(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">' +
+    '<rect width="900" height="320" fill="#ffffff"/>' +
+    '<text x="450" y="135" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="800" fill="#0f172a">PALMER</text>' +
+    '<text x="450" y="205" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" fill="#2563eb">IMOVEIS</text>' +
+    '<text x="450" y="255" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="600" fill="#475569">CRECI 12.596</text>' +
+    '</svg>'
+  );
+  var LOGO_PALMER_OFICIAL_ANEXADA = 'https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png?sha=665353158D30C2184BF1061A92EFD6D7F3492226D31A76FA46E01CC2620ED47A';
+
+  var cfgSafe = (typeof cfg !== 'undefined' && cfg) ? cfg : {};
+  var payloadSafe = (typeof payload !== 'undefined' && payload) ? payload : {};
+  var fotosSafe = (typeof fotos !== 'undefined' && fotos && fotos.length) ? fotos : [];
+  var rowSafe = (typeof rowObj !== 'undefined' && rowObj) ? rowObj : {};
+
+  function norm(k) {
+    return String(k || '')
+      .trim()
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function esc(v) {
+    if (v === null || v === undefined) return '';
+    return String(v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function indexObj(obj) {
+    var out = {};
+    obj = obj || {};
+    Object.keys(obj).forEach(function(k) { out[norm(k)] = obj[k]; });
+    return out;
+  }
+
+  var R = indexObj(rowSafe);
+  var P = indexObj(payloadSafe);
+
+  function pick(keys) {
+    for (var i = 0; i < keys.length; i++) {
+      var nk = norm(keys[i]);
+      if (R[nk] !== undefined && R[nk] !== null && String(R[nk]).trim() !== '') return R[nk];
+      if (P[nk] !== undefined && P[nk] !== null && String(P[nk]).trim() !== '') return P[nk];
+    }
+    return '';
+  }
+
+  function txt(v) {
+    if (v === null || v === undefined) return '';
+    if (Object.prototype.toString.call(v) === '[object Date]') {
+      return Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
+    }
+    if (Array.isArray(v)) return v.join(', ');
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  }
+
+  function dataBR(v) {
+    if (!v) return '';
+    if (Object.prototype.toString.call(v) === '[object Date]') {
+      return Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+    }
+    var s = String(v);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      return s.substring(8, 10) + '/' + s.substring(5, 7) + '/' + s.substring(0, 4);
+    }
+    return s;
+  }
+
+  function extrairDriveId(s) {
+    s = String(s || '').trim();
+    var m = s.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (m && m[1]) return m[1];
+    m = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m && m[1]) return m[1];
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(s)) return s;
+    return '';
+  }
+
+  function imgSrc(v) {
+    v = String(v || '').trim();
+    if (!v) return '';
+    if (/^data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,/i.test(v)) return v;
+    var id = extrairDriveId(v);
+    if (id) return 'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(id);
+    if (/^https?:\/\//i.test(v)) return v;
+    return '';
+  }
+
+  function parseLista(v) {
+    if (!v) return [];
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'object') return [v];
+    var s = String(v || '').trim();
+    if (!s) return [];
+    try {
+      var parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === 'object') return [parsed];
+    } catch (e) {}
+    return s.split(/\n|;|\|/).map(function(item) { return item.trim(); }).filter(function(item) { return item; });
+  }
+
+  function parseLinks(v) {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.map(function(item) { return txt(item).trim(); }).filter(function(item) { return /^https?:\/\//i.test(item); });
+    return String(v || '')
+      .split(/\r?\n|[,;]/)
+      .map(function(item) { return item.trim(); })
+      .filter(function(item) { return /^https?:\/\//i.test(item); });
+  }
+
+  function labelCampo(k) {
+    var str = String(k || '')
+      .replace(/^etapa[0-9]+_/i, '')
+      .replace(/^amb_[0-9]+_/i, 'Ambiente - ')
+      .replace(/^qtd_/i, 'Quantidade: ')
+      .replace(/_/g, ' ')
+      .toUpperCase();
+    if (str === 'TIPO AMBIENTE') return 'NOME DO AMBIENTE';
+    if (str === 'OBS') return 'OBSERVAÇÕES GERAIS';
+    if (str === 'INFRA') return 'INFRAESTRUTURA ELÉTRICA/HIDRÁULICA';
+    return str;
+  }
+
+  function deveOcultar(k, v) {
+    var kk = String(k || '').toLowerCase();
+    var vv = String(v || '');
+    if (kk.indexOf('__') === 0) return true;
+    if (kk.indexOf('fotos_urls') >= 0) return true;
+    if (kk.indexOf('videos_links') >= 0) return true;
+    if (kk.indexOf('foto_data_url') >= 0) return true;
+    if (kk.indexOf('dataurl') >= 0 || kk.indexOf('data_url') >= 0) return true;
+    if (kk.indexOf('base64') >= 0) return true;
+    if (kk.indexOf('payload_json') >= 0) return true;
+    if (/^amb_\d+_/i.test(kk)) return true;
+    if (/^qtd_/i.test(kk)) return true;
+    if (/^etapa4_/i.test(kk)) return true;
+    if (kk === 'parecer_geral') return true;
+    if (vv.indexOf('data:image') === 0 || vv.indexOf('data:video') === 0) return true;
+    if (vv.length > 15000) return true;
+    return false;
+  }
+
+  function linha(label, valor) {
+    if (valor === null || valor === undefined || String(valor).trim() === '') return '';
+    return '<tr><th>' + esc(label) + '</th><td>' + esc(txt(valor)) + '</td></tr>';
+  }
+
+  function tabelaCompacta(itens) {
+    itens = (itens || []).filter(function(item) {
+      return item && item.valor !== null && item.valor !== undefined && String(item.valor).trim() !== '';
+    });
+    if (!itens.length) return '';
+    var html = '<table class="compact-table">';
+    for (var i = 0; i < itens.length; i += 3) {
+      html += '<tr>';
+      for (var j = 0; j < 3; j++) {
+        var item = itens[i + j];
+        if (item) {
+          html += '<th>' + esc(item.label) + '</th><td>' + esc(txt(item.valor)) + '</td>';
+        } else {
+          html += '<th></th><td></td>';
+        }
+      }
+      html += '</tr>';
+    }
+    html += '</table>';
+    return html;
+  }
+
+  function valorCampo(obj, nomes) {
+    obj = obj || {};
+    for (var i = 0; i < nomes.length; i++) {
+      if (obj[nomes[i]] !== undefined && obj[nomes[i]] !== null && String(obj[nomes[i]]).trim() !== '') return obj[nomes[i]];
+    }
+    return '';
+  }
+
+  var numeroLaudo = pick(['NUMERO_LAUDO', 'CODIGO_LAUDO', 'ID_LAUDO', 'etapa1_numeroLaudo']);
+  var dataVistoria = dataBR(pick(['DATA_VISTORIA', 'DATA_LAUDO', 'etapa1_data']));
+  var horaVistoria = pick(['HORA_VISTORIA', 'HORA_LAUDO', 'etapa1_hora']);
+  var vistoriador = pick(['RESPONSAVEL', 'VISTORIADOR', 'RESPONSAVEL_TECNICO', 'etapa1_vistoriador']);
+  var proprietario = pick(['PROPRIETARIO', 'NOME_PROPRIETARIO', 'etapa1_proprietario']);
+  var cpfProprietario = pick(['CPF_PROPRIETARIO', 'CPF_PROP', 'etapa1_cpf_prop']);
+  var locatario = pick(['LOCATARIO', 'NOME_LOCATARIO', 'etapa1_locatario']);
+  var cpfLocatario = pick(['CPF_LOCATARIO', 'CPF_LOC', 'etapa1_cpf_loc']);
+  var contato = pick(['CONTATO', 'TELEFONE', 'WHATSAPP', 'etapa1_contato']);
+  var email = pick(['EMAIL', 'etapa1_email']);
+  var endereco = pick(['ENDERECO_IMOVEL', 'ENDERECO', 'etapa2_endereco']);
+  if (!endereco) {
+    endereco = [
+      pick(['RUA', 'etapa2_rua']),
+      pick(['NUMERO_IMOVEL', 'NUMERO', 'etapa2_numero']),
+      pick(['REFERENCIA', 'etapa2_referencia']),
+      pick(['BAIRRO', 'etapa2_bairro']),
+      pick(['CIDADE', 'etapa2_cidade']),
+      pick(['CEP', 'etapa2_cep'])
+    ].filter(function(v) { return String(v || '').trim(); }).join(', ');
+  }
+  var tipoVistoria = pick(['TIPO_VISTORIA', 'etapa3_tipo']);
+  var categoriaImovel = pick(['CATEGORIA_IMOVEL', 'TIPO_IMOVEL', 'etapa3_categoria', 'etapa3_categoria_outros']);
+  var tipoLocacao = pick(['TIPO_LOCACAO', 'etapa3_locacao', 'etapa3_tipo_locacao']);
+  var locacaoDias = pick(['etapa3_locacao_dias']);
+  var estadoImovel = pick(['ESTADO_IMOVEL', 'etapa3_estado']);
+  var parecerGeral = pick(['parecer_geral', 'PARECER_GERAL']);
+  var hashFinal = (typeof auditHash !== 'undefined' && auditHash) ? auditHash : pick(['HASH_LAUDO', 'HASH']);
+  var hashDocumento = (typeof documentHash !== 'undefined' && documentHash) ? documentHash : ((typeof pdfHash !== 'undefined' && pdfHash) ? pdfHash : pick(['HASH_DOCUMENTO', 'PDF_HASH']));
+  var idDoc = (typeof idDocumento !== 'undefined' && idDocumento) ? idDocumento : pick(['ID_DOCUMENTO']);
+  var manifesto = (typeof manifestoUrl !== 'undefined' && manifestoUrl) ? manifestoUrl : pick(['MANIFESTO_URL']);
+  var qrManifesto = (typeof qrCodeDataUrl !== 'undefined' && qrCodeDataUrl) ? qrCodeDataUrl : '';
+  var assinaturasDigitais = (typeof assinaturasEletronicas !== 'undefined' && assinaturasEletronicas && assinaturasEletronicas.length) ? assinaturasEletronicas : [];
+  var hashManifestoAssinatura = (typeof assinaturaHashManifesto !== 'undefined' && assinaturaHashManifesto) ? assinaturaHashManifesto : '';
+  var manifestoAssinaturaUrl = (typeof assinaturaManifestoUrl !== 'undefined' && assinaturaManifestoUrl) ? assinaturaManifestoUrl : '';
+  var historicoEdicao = (typeof historicoAlteracoes !== 'undefined' && historicoAlteracoes) ? historicoAlteracoes : (pick(['HISTORICO_ALTERACOES']) || payloadSafe.__historico_alteracoes || '');
+  var editadoDeId = pick(['EDITADO_DE_ID']) || payloadSafe.__editado_de_id || '';
+  var statusRevisao = pick(['REVISAO_STATUS']) || (editadoDeId ? 'VIGENTE_REVISAO' : 'VIGENTE');
+  var logoInline = (typeof logoPalmerDataUri !== 'undefined' && logoPalmerDataUri) ? logoPalmerDataUri : '';
+  var marcaInline = (typeof marcaDaguaPalmerDataUri !== 'undefined' && marcaDaguaPalmerDataUri) ? marcaDaguaPalmerDataUri : '';
+  var logoSrc = imgSrc(logoInline || cfgSafe.logoLaudoBase64 || LOGO_PALMER_OFICIAL_ANEXADA || cfgSafe.logoLaudoPublica || cfgSafe.logoLaudoRaw || FALLBACK_LOGO) || FALLBACK_LOGO;
+  var marcaDaguaSrc = imgSrc(marcaInline || cfgSafe.marcaDaguaBase64 || logoInline || LOGO_PALMER_OFICIAL_ANEXADA || cfgSafe.marcaDaguaPublica || cfgSafe.marcaDaguaRaw || logoSrc) || logoSrc;
+  var empresaNome = cfgSafe.razaoSocial || 'PALMER IMÓVEIS SOLUÇÕES LTDA';
+  var empresaCnpj = cfgSafe.cnpj || '55.963.658/0001-90';
+  var empresaSite = cfgSafe.site || 'WWW.PALMERIMOVEIS.COM.BR';
+  var empresaEndereco = cfgSafe.enderecoEmpresa || 'R. SÃO SEBASTIÃO, 1746, SALA 01, JOÃO PAULO II, SALINÓPOLIS-PA CEP: 68721000';
+  var empresaFone = cfgSafe.fone || '(91) 99283-4665';
+  var empresaEmail = cfgSafe.emailEmpresa || 'rycky.corretor@gmail.com';
+  var empresaCorretor = cfgSafe.representanteLegal || cfgSafe.corretor || 'RYCKY DE PALMER DIAS';
+  var empresaCreci = cfgSafe.creci || '12.596';
+
+  var ambientesPorCodigo = {};
+  var ambientes = [];
+  Object.keys(payloadSafe || {}).forEach(function(k) {
+    var m = String(k).match(/^amb_(\d+)_(.+)$/i);
+    if (!m) return;
+    var codigo = 'amb_' + m[1];
+    if (!ambientesPorCodigo[codigo]) {
+      ambientesPorCodigo[codigo] = {
+        codigo: codigo,
+        ordem: Number(m[1]),
+        nome: '',
+        campos: {},
+        anamnese: [],
+        fotosPayload: [],
+        videos: []
+      };
+      ambientes.push(ambientesPorCodigo[codigo]);
+    }
+    ambientesPorCodigo[codigo].campos[m[2]] = payloadSafe[k];
+  });
+  ambientes.sort(function(a, b) { return a.ordem - b.ordem; });
+  ambientes.forEach(function(amb) {
+    amb.nome = txt(amb.campos.tipo_ambiente || ('Ambiente ' + amb.ordem));
+    amb.anamnese = parseLista(amb.campos.anamnese);
+    amb.fotosPayload = parseLista(amb.campos.fotos_urls);
+    amb.videos = parseLinks(amb.campos.videos_links || amb.campos.video_links || amb.campos.video_url);
+  });
+
+  var fotosUnificadas = [];
+  var fotosKeys = {};
+  function adicionarFoto(foto, codigoAmbiente) {
+    foto = foto || {};
+    var url = foto.url || foto.FOTO_URL || foto.driveUrl || foto.directViewUrl || '';
+    var embed = foto.embed || foto.dataUrl || foto.FOTO_DATA_URL || '';
+    var hash = foto.hash || foto.HASH_FOTO || url || embed || JSON.stringify(foto);
+    var key = String(hash || '') + '::' + String(url || '');
+    if (fotosKeys[key]) return;
+    fotosKeys[key] = true;
+    if (codigoAmbiente && !foto.ambienteCodigo) foto.ambienteCodigo = codigoAmbiente;
+    fotosUnificadas.push(foto);
+  }
+  fotosSafe.forEach(function(f) { adicionarFoto(f, ''); });
+  ambientes.forEach(function(amb) {
+    amb.fotosPayload.forEach(function(f) { adicionarFoto(f, amb.codigo); });
+  });
+
+  function codigoFoto(foto) {
+    var raw = String(foto.ambienteCodigo || foto.ambiente || foto.AMBIENTE || foto.local || '');
+    var m = raw.match(/amb_(\d+)/i);
+    if (m && m[1]) return 'amb_' + m[1];
+    return '';
+  }
+
+  function ambientePorNome(nome) {
+    nome = String(nome || '').trim().toUpperCase();
+    if (!nome) return null;
+    for (var i = 0; i < ambientes.length; i++) {
+      if (String(ambientes[i].nome || '').trim().toUpperCase() === nome) return ambientes[i];
+    }
+    return null;
+  }
+
+  function ambienteDaFoto(foto) {
+    var codigo = codigoFoto(foto);
+    if (codigo && ambientesPorCodigo[codigo]) return ambientesPorCodigo[codigo];
+    var raw = foto.ambiente || foto.AMBIENTE || foto.local || '';
+    return ambientePorNome(raw);
+  }
+
+  function nomeAmbienteFoto(foto) {
+    var amb = ambienteDaFoto(foto);
+    if (amb) return amb.nome;
+    return foto.ambiente || foto.AMBIENTE || foto.local || 'Ambiente nao identificado';
+  }
+
+  function tipoObservacaoFoto(foto) {
+    if (foto.tipoObservacao || foto.TIPO_OBSERVACAO) return foto.tipoObservacao || foto.TIPO_OBSERVACAO;
+    if (foto.item || foto.ITEM) return 'Registro fotográfico do item: ' + txt(foto.item || foto.ITEM);
+    return 'Registro fotográfico do ambiente';
+  }
+
+  function resumoComponentes(amb) {
+    if (!amb) return '';
+    var itens = [
+      ['Piso', amb.campos.piso, amb.campos.piso_obs],
+      ['Paredes/Pintura', amb.campos.paredes, amb.campos.paredes_obs],
+      ['Teto/Forro', amb.campos.teto, amb.campos.teto_obs],
+      ['Elétrica/Hidráulica', amb.campos.infra, amb.campos.infra_obs],
+      ['Esquadrias', amb.campos.esquadrias, amb.campos.esquadrias_obs]
+    ];
+    return itens
+      .filter(function(item) { return String(item[1] || item[2] || '').trim(); })
+      .map(function(item) {
+        var base = item[0] + ': ' + (item[1] || 'Não informado');
+        return item[2] ? base + ' - Obs.: ' + item[2] : base;
+      })
+      .join(' | ');
+  }
+
+  var itensEntrega = [];
+  Object.keys(payloadSafe || {}).forEach(function(k) {
+    var v = payloadSafe[k];
+    if (v === null || v === undefined || String(v).trim() === '') return;
+    if (/^qtd_/i.test(k) || /^etapa4_/i.test(k)) {
+      itensEntrega.push({ label: labelCampo(k), valor: v });
+    }
+  });
+
+  var extras = [];
+  Object.keys(payloadSafe || {}).forEach(function(k) {
+    var v = payloadSafe[k];
+    var nk = norm(k);
+    if (deveOcultar(k, v)) return;
+    if (v === null || v === undefined || String(v).trim() === '') return;
+    if ([
+      'NUMERO_LAUDO','CODIGO_LAUDO','ID_LAUDO','DATA_VISTORIA','DATA_LAUDO','HORA_VISTORIA','HORA_LAUDO',
+      'RESPONSAVEL','VISTORIADOR','RESPONSAVEL_TECNICO','PROPRIETARIO','NOME_PROPRIETARIO','CPF_PROPRIETARIO',
+      'CPF_PROP','LOCATARIO','NOME_LOCATARIO','CPF_LOCATARIO','CPF_LOC','CONTATO','TELEFONE','WHATSAPP','EMAIL',
+      'ENDERECO_IMOVEL','ENDERECO','RUA','NUMERO_IMOVEL','NUMERO','REFERENCIA','BAIRRO','CIDADE','CEP',
+      'TIPO_VISTORIA','CATEGORIA_IMOVEL','TIPO_IMOVEL','TIPO_LOCACAO','ESTADO_IMOVEL','PDF_URL','HASH_LAUDO','HASH',
+      'PAYLOAD_JSON','DATA_REGISTRO','PDF_HASH','PDF_GERADO_EM','QTD_FOTOS','QTD_ITENS',
+      'ID_DOCUMENTO','HASH_DOCUMENTO','MANIFESTO_URL','EDITADO_DE_ID','ID_REVISAO_ATUAL',
+      'REVISAO','REVISAO_STATUS','HISTORICO_ALTERACOES','HASH_ANTERIOR','EDITADO_EM'
+    ].indexOf(nk) >= 0) return;
+    extras.push({ label: labelCampo(k), valor: v });
+  });
+?>
+
+  <div class="watermark"><img src="<?!= marcaDaguaSrc ?>" alt="Marca d'água Palmer Imóveis"></div>
+
+  <div class="header">
+    <table class="header-table">
+      <tr>
+        <td class="logo-cell"><img class="logo" src="<?!= logoSrc ?>" alt="Logo Palmer Imóveis"></td>
+        <td>
+          <div class="company-name"><?= txt(empresaNome) ?></div>
+          <h1>LAUDO DE VISTORIA DE IMÓVEL</h1>
+          <div class="doc-subtitle">Documento técnico-administrativo de constatação, entrada, saída ou conferência imobiliária</div>
+          <div class="doc-meta">CNPJ: <?= txt(empresaCnpj) ?></div>
+          <div class="doc-meta">Site: <?= txt(empresaSite) ?></div>
+          <div class="doc-meta">Endereço: <?= txt(empresaEndereco) ?></div>
+          <div class="doc-meta">Fone: <?= txt(empresaFone) ?> | E-mail: <?= txt(empresaEmail) ?></div>
+          <div class="doc-meta">Representante legal: <?= txt(empresaCorretor) ?> <? if (empresaCreci) { ?> | CRECI: <?= txt(empresaCreci) ?><? } ?></div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="doc-note">
+    Este documento registra de forma técnica, descritiva e organizada as condições aparentes do imóvel no momento da vistoria.
+    O conteúdo está estruturado por identificação documental, partes, imóvel, ambientes, componentes avaliados,
+    observações pontuais, diagnósticos/anamnese e evidências fotográficas vinculadas.
+  </div>
+
+  <div class="criterio">
+    Critério documental: laudo emitido em papel A4, fonte Arial, seções numeradas, identificação das partes,
+    descrição objetiva dos ambientes, registro fotográfico padronizado sem corte de imagem e campos de assinatura
+    para ciência das responsabilidades de entrada e saída do imóvel.
+  </div>
+
+  <h2>1. Identificação e controle documental</h2>
+  <?!= tabelaCompacta([
+    { label: 'Número do laudo', valor: numeroLaudo },
+    { label: 'Data da vistoria', valor: dataVistoria },
+    { label: 'Hora da vistoria', valor: horaVistoria },
+    { label: 'Vistoriador responsável', valor: vistoriador },
+    { label: 'Tipo de vistoria', valor: tipoVistoria },
+    { label: 'Status de revisão', valor: statusRevisao },
+    { label: 'ID do documento emitido', valor: idDoc }
+  ]) ?>
+  <? if (manifesto || qrManifesto) { ?>
+    <table class="manifest-table">
+      <tr>
+        <th>Manifesto de autenticidade</th>
+        <td>
+          <? if (manifesto) { ?><a href="<?= txt(manifesto) ?>"><?= txt(manifesto) ?></a><? } ?>
+          <div class="small">O QR Code confirma o ID do laudo e o hash documental registrado no sistema.</div>
+        </td>
+        <? if (qrManifesto) { ?><td class="qr-cell"><img class="qr-img" src="<?!= qrManifesto ?>" alt="QR Code do manifesto"></td><? } ?>
+      </tr>
+      <? if (hashDocumento) { ?><tr><th>Hash para conferência</th><td<? if (qrManifesto) { ?> colspan="2"<? } ?> class="hash-text"><?= txt(hashDocumento) ?></td></tr><? } ?>
+    </table>
+  <? } ?>
+
+  <h2>2. Partes envolvidas</h2>
+  <?!= tabelaCompacta([
+    { label: 'Proprietário', valor: proprietario },
+    { label: 'CPF do proprietário', valor: cpfProprietario },
+    { label: 'Locatário', valor: locatario },
+    { label: 'CPF do locatário', valor: cpfLocatario },
+    { label: 'Contato', valor: contato },
+    { label: 'E-mail', valor: email }
+  ]) ?>
+
+  <h2>3. Identificação do imóvel</h2>
+  <?!= tabelaCompacta([
+    { label: 'Endereço completo', valor: endereco },
+    { label: 'Categoria do imóvel', valor: categoriaImovel },
+    { label: 'Tipo de locação', valor: tipoLocacao },
+    { label: 'Quantidade de dias', valor: locacaoDias },
+    { label: 'Estado geral inicial', valor: estadoImovel }
+  ]) ?>
+
+  <? if (itensEntrega.length) { ?>
+    <h2>4. Itens entregues, infraestrutura e condições gerais</h2>
+    <?!= tabelaCompacta(itensEntrega) ?>
+  <? } ?>
+
+  <h2>5. Estruturas e ambientes avaliados</h2>
+  <? if (ambientes.length) { ?>
+    <? for (var a = 0; a < ambientes.length; a++) {
+      var amb = ambientes[a];
+    ?>
+      <div class="env-card">
+        <div class="env-head">
+          <span class="env-code"><?= txt('EST-' + (a + 1)) ?></span>
+          <?= txt(amb.nome) ?>
+        </div>
+        <div class="env-body">
+          <?!= tabelaCompacta([
+            { label: 'Estrutura', valor: amb.nome },
+            { label: 'Código interno', valor: amb.codigo },
+            { label: 'Piso', valor: amb.campos.piso },
+            { label: 'Paredes/Pintura', valor: amb.campos.paredes },
+            { label: 'Teto/Forro', valor: amb.campos.teto },
+            { label: 'Elétrica/Hidráulica', valor: amb.campos.infra },
+            { label: 'Esquadrias', valor: amb.campos.esquadrias },
+            { label: 'Fotos vinculadas', valor: amb.fotosPayload.length }
+          ]) ?>
+          <? if (amb.campos.piso_obs || amb.campos.paredes_obs || amb.campos.teto_obs || amb.campos.infra_obs || amb.campos.esquadrias_obs) { ?>
+            <div class="observation">
+              <strong>Observações técnicas por componente:</strong>
+              <? if (amb.campos.piso_obs) { ?><br><strong>Piso:</strong> <?= txt(amb.campos.piso_obs) ?><? } ?>
+              <? if (amb.campos.paredes_obs) { ?><br><strong>Paredes/Pintura:</strong> <?= txt(amb.campos.paredes_obs) ?><? } ?>
+              <? if (amb.campos.teto_obs) { ?><br><strong>Teto/Forro:</strong> <?= txt(amb.campos.teto_obs) ?><? } ?>
+              <? if (amb.campos.infra_obs) { ?><br><strong>Elétrica/Hidráulica:</strong> <?= txt(amb.campos.infra_obs) ?><? } ?>
+              <? if (amb.campos.esquadrias_obs) { ?><br><strong>Esquadrias:</strong> <?= txt(amb.campos.esquadrias_obs) ?><? } ?>
+            </div>
+          <? } ?>
+          <? if (amb.anamnese.length) { ?>
+            <div class="observation">
+              <strong>Tipo de observação:</strong> Diagnóstico técnico / anamnese do ambiente<br>
+              <strong>Detalhamento:</strong>
+              <div class="tags">
+                <? for (var an = 0; an < amb.anamnese.length; an++) { ?>
+                  <span class="tag"><?= txt(amb.anamnese[an]) ?></span>
+                <? } ?>
+              </div>
+            </div>
+          <? } ?>
+          <? if (amb.campos.obs) { ?>
+            <div class="observation">
+              <strong>Tipo de observação:</strong> Observação descritiva do vistoriador<br>
+              <strong>Ambiente:</strong> <?= txt(amb.nome) ?><br>
+              <strong>Descrição:</strong> <?= txt(amb.campos.obs) ?>
+            </div>
+          <? } ?>
+          <? if (amb.videos && amb.videos.length) { ?>
+            <div class="video-list">
+              <strong>Vídeos vinculados ao ambiente:</strong><br>
+              <? for (var vdo = 0; vdo < amb.videos.length; vdo++) { ?>
+                Link <?= txt(vdo + 1) ?>: <a href="<?= txt(amb.videos[vdo]) ?>"><?= txt(amb.videos[vdo]) ?></a><br>
+              <? } ?>
+              <span class="small">Vídeos aceitos somente como links de acesso previamente carregados em plataforma externa ou Drive.</span>
+            </div>
+          <? } ?>
+        </div>
+      </div>
+    <? } ?>
+  <? } else { ?>
+      <div class="box muted">Não foram localizados ambientes detalhados no registro do laudo.</div>
+  <? } ?>
+
+  <h2>6. Registro fotográfico com legendas técnicas</h2>
+  <? if (fotosUnificadas.length) { ?>
+    <div class="photos">
+      <? for (var f = 0; f < fotosUnificadas.length; f++) {
+        var foto = fotosUnificadas[f] || {};
+        var srcFoto = imgSrc(foto.embed || foto.dataUrl || foto.url || foto.FOTO_URL || '');
+        if (!srcFoto) continue;
+        var ambFoto = ambienteDaFoto(foto);
+        var nomeAmbFoto = nomeAmbienteFoto(foto);
+        var obsAmbFoto = ambFoto && ambFoto.campos.obs ? ambFoto.campos.obs : '';
+        var anamFoto = ambFoto && ambFoto.anamnese && ambFoto.anamnese.length ? ambFoto.anamnese.join('; ') : '';
+        var componentesFoto = resumoComponentes(ambFoto);
+        var legendaTecnica = foto.legendaTecnica || foto.LEGENDA_TECNICA || '';
+      ?>
+        <div class="photo-card">
+          <img class="photo" src="<?!= srcFoto ?>" alt="Foto da vistoria">
+          <div class="photo-caption">
+            <div class="caption-row"><span class="caption-label">Foto:</span> <?= txt(f + 1) ?> / <?= txt(fotosUnificadas.length) ?></div>
+            <div class="caption-row"><span class="caption-label">Ambiente/Estrutura:</span> <?= txt(nomeAmbFoto) ?></div>
+            <div class="caption-row"><span class="caption-label">Tipo de observação:</span> <?= txt(tipoObservacaoFoto(foto)) ?></div>
+            <? if (legendaTecnica) { ?><div class="caption-row"><span class="caption-label">Legenda técnica:</span> <?= txt(legendaTecnica) ?></div><? } ?>
+            <? if (componentesFoto) { ?><div class="caption-row"><span class="caption-label">Componentes avaliados:</span> <?= txt(componentesFoto) ?></div><? } ?>
+            <? if (obsAmbFoto) { ?><div class="caption-row"><span class="caption-label">Observação do ambiente:</span> <?= txt(obsAmbFoto) ?></div><? } ?>
+            <? if (anamFoto) { ?><div class="caption-row"><span class="caption-label">Diagnóstico/anamnese:</span> <?= txt(anamFoto) ?></div><? } ?>
+            <div class="caption-row small"><span class="caption-label">Padronização:</span> 10x12 sem corte, imagem enquadrada ao quadro documental<? if (foto.largura || foto.altura || foto.tamanhoBytes) { ?> - <?= txt((foto.largura || '') + 'x' + (foto.altura || '') + (foto.tamanhoBytes ? ' | ' + foto.tamanhoBytes + ' bytes' : '')) ?><? } ?></div>
+            <? if (foto.hash || foto.HASH_FOTO) { ?><div class="caption-row small"><span class="caption-label">Hash/ID foto:</span> <?= txt(foto.hash || foto.HASH_FOTO) ?></div><? } ?>
+          </div>
+        </div>
+      <? } ?>
+    </div>
+  <? } else { ?>
+      <div class="box muted">Nenhuma foto vinculada ao laudo no momento da emissão.</div>
+  <? } ?>
+
+  <? if (parecerGeral) { ?>
+    <h2>7. Parecer técnico geral</h2>
+    <div class="box"><?= txt(parecerGeral) ?></div>
+  <? } ?>
+
+  <? if (extras.length) { ?>
+    <h2>8. Informações complementares do registro</h2>
+    <?!= tabelaCompacta(extras) ?>
+  <? } ?>
+
+  <div class="avoid-break">
+    <h2>9. Fundamentação legal e critérios de responsabilidade</h2>
+    <div class="legal-box">
+      <p>
+        Este laudo é emitido como documento técnico-administrativo de constatação das condições aparentes do imóvel,
+        servindo como referência documental para entrega, uso, conservação e devolução do bem vistoriado.
+      </p>
+      <p>
+        Aplicam-se, no que couber, as disposições da Lei nº 8.245/1991, especialmente quanto aos deveres do locador
+        e do locatário em relação à entrega, conservação, uso regular, comunicação de defeitos e restituição do imóvel.
+      </p>
+      <p>
+        Também se observam os princípios de boa-fé objetiva, responsabilidade por ato ilícito e cumprimento das
+        obrigações contratuais previstos no Código Civil, sem prejuízo das cláusulas do contrato de locação firmado
+        entre as partes.
+      </p>
+      <p>
+        Os dados pessoais e imagens constantes neste documento são tratados para finalidade de identificação das partes,
+        controle administrativo, prova documental e gestão da vistoria, observadas as bases e medidas de segurança
+        previstas na Lei nº 13.709/2018 - Lei Geral de Proteção de Dados Pessoais.
+      </p>
+      <p>
+        <strong>Cláusula de representação legal:</strong> <?= txt(empresaCorretor) ?>, corretor responsável e
+        representante legal da <?= txt(empresaNome) ?>, inscrita no CNPJ nº <?= txt(empresaCnpj) ?>, fica identificado
+        neste laudo como responsável pela representação da empresa para fins de acompanhamento da vistoria, conferência
+        das informações, emissão documental, ciência técnica e assinatura dos campos destinados ao corretor na entrada
+        e na saída do imóvel.
+      </p>
+    </div>
+  </div>
+
+  <div class="avoid-break">
+    <h2>10. Cláusulas de responsabilidade e assinaturas</h2>
+    <div class="box">
+      As partes declaram ciência das informações constantes neste laudo, incluindo identificação do imóvel,
+      estruturas avaliadas, condições aparentes, observações, diagnósticos e registros fotográficos apresentados
+      no momento da vistoria. Este documento servirá como referência para conferência no recebimento e na
+      devolução do imóvel.
+    </div>
+    <table class="responsabilidades">
+      <tr>
+        <td>
+          <div class="responsabilidade-titulo">Responsabilidade na entrada do imóvel</div>
+          <div class="responsabilidade-texto">
+            No ato de entrada e recebimento do imóvel, o locatário/ocupante declara ter recebido as chaves
+            e tomado ciência das condições descritas neste LAUDO DE VISTORIA, responsabilizando-se pela guarda,
+            conservação e uso regular do imóvel, suas instalações, móveis, equipamentos, acessórios, chaves,
+            controles e demais itens relacionados. Eventuais divergências deverão ser comunicadas formalmente à
+            <?= txt(empresaNome) ?> no prazo contratual ou, inexistindo prazo específico, imediatamente após a constatação.
+          </div>
+          <table class="assinatura-dupla">
+            <tr>
+              <td>
+                <div class="assinatura-responsabilidade">Ciência na entrada</div>
+                <div class="assinatura-identificacao">Locatário / ocupante / representante</div>
+              </td>
+              <td>
+                <div class="assinatura-responsabilidade">Corretor na entrada</div>
+                <div class="assinatura-identificacao"><?= txt(empresaCorretor) ?> <? if (empresaCreci) { ?>- CRECI <?= txt(empresaCreci) ?><? } ?></div>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td>
+          <div class="responsabilidade-titulo">Responsabilidade na saída do imóvel</div>
+          <div class="responsabilidade-texto">
+            No ato de saída e devolução do imóvel, o locatário/ocupante declara ciência de que as condições do
+            imóvel serão conferidas com base neste laudo e nos registros complementares, responsabilizando-se por
+            danos, avarias, ausência de itens, alterações não autorizadas, falta de limpeza, pendências de
+            manutenção ou qualquer diferença não registrada como condição pré-existente, sem prejuízo das
+            obrigações previstas no contrato de locação.
+          </div>
+          <table class="assinatura-dupla">
+            <tr>
+              <td>
+                <div class="assinatura-responsabilidade">Ciência na saída</div>
+                <div class="assinatura-identificacao">Locatário / ocupante / representante</div>
+              </td>
+              <td>
+                <div class="assinatura-responsabilidade">Corretor na saída</div>
+                <div class="assinatura-identificacao"><?= txt(empresaCorretor) ?> <? if (empresaCreci) { ?>- CRECI <?= txt(empresaCreci) ?><? } ?></div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <? if (assinaturasDigitais && assinaturasDigitais.length) { ?>
+  <div class="assinaturas-eletronicas">
+    <h3>Assinaturas eletronicas auditadas</h3>
+    <div class="box">
+      As assinaturas abaixo foram coletadas pelo modulo AUTENTIKO Sign com token de e-mail,
+      aceite expresso, evidencias tecnicas, hash encadeado de eventos e manifesto publico de conferencia.
+      A consulta do QR Code permite confrontar o ID da assinatura e os hashes registrados.
+    </div>
+    <table class="assinatura-selo-grid">
+      <tr>
+      <? for (var ai = 0; ai < assinaturasDigitais.length; ai++) {
+        var ass = assinaturasDigitais[ai] || {};
+        if (ai > 0 && ai % 2 === 0) { ?></tr><tr><? } ?>
+        <td>
+          <div class="assinatura-selo">
+            <div class="selo-topo">AUTENTIKO Sign | <?= txt(ass.papelLabel || ass.papel) ?></div>
+            <div class="selo-nome"><?= txt(ass.nome || 'Signatario identificado') ?></div>
+            <div class="selo-linha"><strong>ID:</strong> <?= txt(ass.idSignatario) ?></div>
+            <div class="selo-linha"><strong>Assinado em:</strong> <?= txt(ass.assinadoEm) ?></div>
+            <div class="selo-linha"><strong>Passkey/WebAuthn:</strong> <?= txt(ass.passkeyStatus || 'Nao registrada') ?></div>
+            <div class="selo-linha"><strong>Geolocalizacao:</strong> <?= txt(ass.geo || 'Nao informada') ?></div>
+            <div class="selo-linha"><strong>Hash de IP:</strong> <?= txt(ass.ipHash || '') ?></div>
+            <div class="selo-hash"><strong>Hash da assinatura:</strong> <?= txt(ass.hashAssinatura || '') ?></div>
+          </div>
+        </td>
+      <? } ?>
+      <? if (assinaturasDigitais.length % 2 === 1) { ?><td></td><? } ?>
+      </tr>
+    </table>
+    <div class="small" style="margin-top:8px;">
+      Hash do manifesto de assinatura: <span class="hash-text"><?= txt(hashManifestoAssinatura) ?></span>
+      <? if (manifestoAssinaturaUrl) { ?> | Manifesto: <?= txt(manifestoAssinaturaUrl) ?><? } ?>
+    </div>
+  </div>
+  <? } ?>
+
+  <div class="footer">
+    <strong><?= txt(empresaNome) ?></strong> | CNPJ: <?= txt(empresaCnpj) ?> | <?= txt(empresaSite) ?><br>
+    <?= txt(empresaEndereco) ?> | Fone: <?= txt(empresaFone) ?> | E-mail: <?= txt(empresaEmail) ?><br>
+    Representante legal: <?= txt(empresaCorretor) ?> <? if (empresaCreci) { ?> | CRECI: <?= txt(empresaCreci) ?><? } ?><br>
+    Documento gerado pelo sistema AUTENTIKO-OK CHECK.
+    <? if (hashFinal) { ?> Hash do laudo: <span class="hash-text"><?= txt(hashFinal) ?></span>.<? } ?>
+    <? if (hashDocumento) { ?> Hash documental: <span class="hash-text"><?= txt(hashDocumento) ?></span>.<? } ?><br>
+    <? if (idDoc) { ?>ID do documento: <?= txt(idDoc) ?>. <? } ?>
+    <? if (manifesto) { ?>Manifesto: <?= txt(manifesto) ?><? } ?>
+    <? if (editadoDeId || historicoEdicao) { ?>
+      <br><strong>Registro de edição:</strong>
+      <? if (editadoDeId) { ?>este laudo é revisão do ID <?= txt(editadoDeId) ?>.<? } ?>
+      <? if (historicoEdicao) { ?> Alterações registradas: <?= txt(historicoEdicao) ?><? } ?>
+    <? } ?>
+  </div>
+</body>
+</html>
