@@ -18,8 +18,8 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `51`
-- Deployment: `AUTENTIKO corrige fotos quebradas no PDF 2026-07-03`
+- Versao publicada: `52`
+- Deployment: `AUTENTIKO galeria por ambiente 2026-07-03`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -80,6 +80,13 @@ Arquivos principais:
 - Quando a mesma evidencia existe no payload e na aba `FOTOS_LAUDO`, o PDF prefere a versao com `data:image` embutido.
 - Antes de emitir o PDF, o backend tenta sincronizar fotos do payload para `FOTOS_LAUDO`.
 - Se alguma imagem ainda chegar sem incorporacao valida, o PDF registra quadro tecnico em vez de icone quebrado.
+
+## Ajuste de modelo fotografico @52
+
+- O registro fotografico passou a usar galeria em grade por ambiente.
+- Cada foto exibe apenas um codigo documental curto, como `F001`, `F002`.
+- A legenda tecnica, observacoes, componentes, hashes e anamnese ficam consolidados uma unica vez por ambiente.
+- A anamnese exibida no laudo foi convertida para linguagem de constatacao no passado, como `verificou-se`, `constatou-se` e `registrou-se`.
 
 ## Revisao de seguranca @43
 

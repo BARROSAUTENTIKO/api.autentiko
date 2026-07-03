@@ -93,3 +93,10 @@
 - Conferir que o PDF não contém imagem quebrada nas páginas de registro fotográfico.
 - Conferir se a auditoria `EMITIR_PDF_COM_MANIFESTO` registra `fotosSincronizadasAntesPdf`.
 - Se aparecer quadro de imagem não incorporada, revisar a respectiva linha em `FOTOS_LAUDO` pelo hash/ID.
+
+## 13. Galeria e legenda por ambiente @52
+- Emitir um laudo com várias fotos por ambiente.
+- Conferir que cada foto mostra apenas o código documental, sem legenda individual abaixo.
+- Conferir que a legenda técnica aparece uma única vez por ambiente.
+- Conferir que observações e anamnese aparecem consolidadas por ambiente.
+- Conferir que a anamnese usa passado constatativo, por exemplo `verificou-se` ou `constatou-se`.

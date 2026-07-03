@@ -216,14 +216,14 @@ function garantirAnamnesePadrao_(ss) {
   if (sh.getLastRow() > 1) return;
 
   var dados = [
-    ['Áreas Sociais', 'Sala de Estar: paredes, piso, teto, portas, janelas, tomadas e iluminação.'],
-    ['Áreas Sociais', 'Sala de Jantar: piso, pintura, luminárias, tomadas e estado geral.'],
-    ['Áreas Íntimas', 'Quarto: piso, paredes, teto, portas, janelas, armários e iluminação.'],
-    ['Áreas Íntimas', 'Suíte: quarto, banheiro, metais, louças, box, ventilação e infiltrações.'],
-    ['Cozinha', 'Cozinha: bancada, pia, torneira, sifão, revestimentos, armários e tomadas.'],
-    ['Banheiros', 'Banheiro: louças, metais, box, ralos, registros, revestimentos e ventilação.'],
-    ['Serviço', 'Área de serviço: tanque, instalações hidráulicas, tomadas e ventilação.'],
-    ['Estrutura', 'Verificar rachaduras, fissuras, infiltrações, umidade, mofo e cupins.']
+    ['Áreas Sociais', 'Sala de Estar: verificou-se o estado aparente de paredes, piso, teto, portas, janelas, tomadas e iluminação.'],
+    ['Áreas Sociais', 'Sala de Jantar: verificou-se o estado aparente de piso, pintura, luminárias, tomadas e estado geral.'],
+    ['Áreas Íntimas', 'Quarto: verificou-se o estado aparente de piso, paredes, teto, portas, janelas, armários e iluminação.'],
+    ['Áreas Íntimas', 'Suíte: verificou-se o estado aparente do quarto, banheiro, metais, louças, box, ventilação e infiltrações.'],
+    ['Cozinha', 'Cozinha: verificou-se o estado aparente de bancada, pia, torneira, sifão, revestimentos, armários e tomadas.'],
+    ['Banheiros', 'Banheiro: verificou-se o estado aparente de louças, metais, box, ralos, registros, revestimentos e ventilação.'],
+    ['Serviço', 'Área de serviço: verificou-se o estado aparente de tanque, instalações hidráulicas, tomadas e ventilação.'],
+    ['Estrutura', 'Verificou-se a existência aparente de rachaduras, fissuras, infiltrações, umidade, mofo e cupins.']
   ];
 
   sh.getRange(2, 1, dados.length, 2).setValues(dados);

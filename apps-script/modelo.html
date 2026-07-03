@@ -241,6 +241,7 @@
       margin-right: -1%;
     }
     .photo-card {
+      position: relative;
       display: inline-block;
       width: 32.15%;
       margin: 0 1% 7px 0;
@@ -253,16 +254,14 @@
     }
     .photo {
       width: 100%;
-      height: 3.55cm;
+      height: 3.9cm;
       object-fit: contain;
-      border-bottom: 1px solid #cbd5e1;
       display: block;
       background: #ffffff;
     }
     .photo-missing {
       width: 100%;
-      height: 3.55cm;
-      border-bottom: 1px solid #cbd5e1;
+      height: 3.9cm;
       background: #f8fafc;
       color: #64748b;
       display: table;
@@ -275,11 +274,27 @@
       display: table-cell;
       vertical-align: middle;
     }
-    .photo-caption {
-      font-size: 7.25px;
+    .photo-code {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      background: rgba(15, 23, 42, 0.82);
+      color: #ffffff;
+      font-size: 7.6px;
+      font-weight: bold;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    .photo-legend-env {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
       color: #334155;
-      padding: 4px 5px;
-      line-height: 1.16;
+      padding: 6px 7px;
+      margin: 2px 1% 9px 0;
+      font-size: 8.4px;
+      line-height: 1.28;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .caption-row { margin-bottom: 2px; }
     .caption-label {
@@ -800,6 +815,64 @@
     return h.length > 18 ? (h.substring(0, 18) + '...') : h;
   }
 
+  function codigoRegistroFoto(indice) {
+    var n = Number(indice || 0) + 1;
+    var s = String(n);
+    while (s.length < 3) s = '0' + s;
+    return 'F' + s;
+  }
+
+  function textoAnamnesePassado(valor) {
+    var s = String(valor || '').trim();
+    if (!s) return '';
+    if (/^(verificou-se|constatou-se|observou-se|registrou-se|identificou-se|avaliou-se|conferiu-se|ajustou-se|corrigiu-se)\b/i.test(s)) return s;
+    s = s
+      .replace(/^verificar\b/i, 'Verificou-se')
+      .replace(/^avaliar\b/i, 'Avaliou-se')
+      .replace(/^registrar\b/i, 'Registrou-se')
+      .replace(/^conferir\b/i, 'Conferiu-se')
+      .replace(/^observar\b/i, 'Observou-se')
+      .replace(/^identificar\b/i, 'Identificou-se')
+      .replace(/^ajustar\b/i, 'Ajustou-se')
+      .replace(/^corrigir\b/i, 'Corrigiu-se')
+      .replace(/\bdeverá\b/ig, 'foi indicado que')
+      .replace(/\bdeverão\b/ig, 'foi indicado que')
+      .replace(/\bserá\b/ig, 'foi')
+      .replace(/\bserão\b/ig, 'foram');
+    if (/^(Verificou-se|Avaliou-se|Registrou-se|Conferiu-se|Observou-se|Identificou-se|Ajustou-se|Corrigiu-se)\b/.test(s)) return s;
+    var partes = s.split(':');
+    if (partes.length > 1) {
+      var titulo = partes.shift().trim();
+      var corpo = partes.join(':').trim();
+      return titulo + ': verificou-se o estado aparente de ' + corpo;
+    }
+    return 'Verificou-se: ' + s;
+  }
+
+  function listaAnamnesePassada(lista) {
+    lista = lista || [];
+    return lista
+      .map(function(item) { return textoAnamnesePassado(item); })
+      .filter(function(item) { return String(item || '').trim(); })
+      .join(' | ');
+  }
+
+  function observacaoConsolidadaAmbiente(amb) {
+    if (!amb) return '';
+    var partes = [];
+    if (amb.campos.obs) partes.push('Observação geral: ' + amb.campos.obs);
+    [
+      ['Piso', amb.campos.piso_obs],
+      ['Paredes/Pintura', amb.campos.paredes_obs],
+      ['Teto/Forro', amb.campos.teto_obs],
+      ['Elétrica/Hidráulica', amb.campos.infra_obs],
+      ['Esquadrias', amb.campos.esquadrias_obs]
+    ].forEach(function(item) {
+      if (String(item[1] || '').trim()) partes.push(item[0] + ': ' + item[1]);
+    });
+    return partes.join(' | ');
+  }
+
   var fotosPorAmbiente = [];
   var fotosGrupoIndex = {};
   fotosUnificadas.forEach(function(foto, idx) {
@@ -965,6 +1038,8 @@
   <? if (ambientes.length) { ?>
     <? for (var a = 0; a < ambientes.length; a++) {
       var amb = ambientes[a];
+      var obsConsolidadaAmb = observacaoConsolidadaAmbiente(amb);
+      var anamPassadaAmb = listaAnamnesePassada(amb.anamnese);
     ?>
       <div class="env-card">
         <div class="env-head">
@@ -982,32 +1057,12 @@
             { label: 'Esquadrias', valor: amb.campos.esquadrias },
             { label: 'Fotos vinculadas', valor: amb.fotosPayload.length }
           ]) ?>
-          <? if (amb.campos.piso_obs || amb.campos.paredes_obs || amb.campos.teto_obs || amb.campos.infra_obs || amb.campos.esquadrias_obs) { ?>
+          <? if (obsConsolidadaAmb || anamPassadaAmb) { ?>
             <div class="observation">
-              <strong>Observações técnicas por componente:</strong>
-              <? if (amb.campos.piso_obs) { ?><br><strong>Piso:</strong> <?= txt(amb.campos.piso_obs) ?><? } ?>
-              <? if (amb.campos.paredes_obs) { ?><br><strong>Paredes/Pintura:</strong> <?= txt(amb.campos.paredes_obs) ?><? } ?>
-              <? if (amb.campos.teto_obs) { ?><br><strong>Teto/Forro:</strong> <?= txt(amb.campos.teto_obs) ?><? } ?>
-              <? if (amb.campos.infra_obs) { ?><br><strong>Elétrica/Hidráulica:</strong> <?= txt(amb.campos.infra_obs) ?><? } ?>
-              <? if (amb.campos.esquadrias_obs) { ?><br><strong>Esquadrias:</strong> <?= txt(amb.campos.esquadrias_obs) ?><? } ?>
-            </div>
-          <? } ?>
-          <? if (amb.anamnese.length) { ?>
-            <div class="observation">
-              <strong>Tipo de observação:</strong> Diagnóstico técnico / anamnese do ambiente<br>
-              <strong>Detalhamento:</strong>
-              <div class="tags">
-                <? for (var an = 0; an < amb.anamnese.length; an++) { ?>
-                  <span class="tag"><?= txt(amb.anamnese[an]) ?></span>
-                <? } ?>
-              </div>
-            </div>
-          <? } ?>
-          <? if (amb.campos.obs) { ?>
-            <div class="observation">
-              <strong>Tipo de observação:</strong> Observação descritiva do vistoriador<br>
+              <strong>Registro técnico consolidado do ambiente:</strong><br>
               <strong>Ambiente:</strong> <?= txt(amb.nome) ?><br>
-              <strong>Descrição:</strong> <?= txt(amb.campos.obs) ?>
+              <? if (obsConsolidadaAmb) { ?><strong>Observações verificadas:</strong> <?= txt(obsConsolidadaAmb) ?><br><? } ?>
+              <? if (anamPassadaAmb) { ?><strong>Anamnese constatada:</strong> <?= txt(anamPassadaAmb) ?><? } ?>
             </div>
           <? } ?>
           <? if (amb.videos && amb.videos.length) { ?>
@@ -1031,6 +1086,14 @@
     <div class="photos">
       <? for (var fg = 0; fg < fotosPorAmbiente.length; fg++) {
         var grupoFotos = fotosPorAmbiente[fg] || { nome: 'Ambiente nao identificado', fotos: [] };
+        var primeiraFotoGrupo = grupoFotos.fotos.length ? ((grupoFotos.fotos[0] || {}).foto || {}) : {};
+        var ambGrupo = ambienteDaFoto(primeiraFotoGrupo) || ambientePorNome(grupoFotos.nome);
+        var componentesGrupo = resumoComponentes(ambGrupo);
+        var obsGrupo = observacaoConsolidadaAmbiente(ambGrupo);
+        var anamGrupo = listaAnamnesePassada((ambGrupo && ambGrupo.anamnese) || []);
+        var codigosGrupo = [];
+        var tiposGrupo = {};
+        var hashesGrupo = [];
       ?>
         <div class="photo-env-group">
           <div class="photo-env-title">Ambiente/Estrutura: <?= txt(grupoFotos.nome) ?> - <?= txt(grupoFotos.fotos.length) ?> foto(s)</div>
@@ -1042,33 +1105,32 @@
               var srcFoto = imgSrc(foto.embed || foto.dataUrl || foto.url || foto.FOTO_URL || foto.thumbnailUrl || foto.FOTO_THUMB_URL || '');
               var srcFotoIncorporado = /^data:image\//i.test(String(srcFoto || ''));
               if (!srcFoto && !hashCurtoFoto(foto)) continue;
-              var ambFoto = ambienteDaFoto(foto);
-              var nomeAmbFoto = nomeAmbienteFoto(foto);
-              var obsAmbFoto = ambFoto && ambFoto.campos.obs ? ambFoto.campos.obs : '';
-              var anamFoto = ambFoto && ambFoto.anamnese && ambFoto.anamnese.length ? ambFoto.anamnese.join('; ') : '';
-              var componentesFoto = resumoComponentes(ambFoto);
-              var legendaTecnica = foto.legendaTecnica || foto.LEGENDA_TECNICA || '';
+              var codigoFotoDoc = codigoRegistroFoto(f);
+              var tipoFotoAtual = tipoObservacaoFoto(foto);
               var hashFotoCurto = hashCurtoFoto(foto);
+              codigosGrupo.push(codigoFotoDoc);
+              tiposGrupo[tipoFotoAtual] = true;
+              if (hashFotoCurto) hashesGrupo.push(codigoFotoDoc + ': ' + hashFotoCurto);
             ?>
               <div class="photo-card">
+                <div class="photo-code"><?= txt(codigoFotoDoc) ?></div>
                 <? if (srcFotoIncorporado) { ?>
                   <img class="photo" src="<?!= srcFoto ?>" alt="Foto da vistoria">
                 <? } else { ?>
                   <div class="photo-missing"><span>Imagem não incorporada ao PDF. Conferir arquivo original pelo hash/ID e pela aba FOTOS_LAUDO.</span></div>
                 <? } ?>
-                <div class="photo-caption">
-                  <div class="caption-row"><span class="caption-label">Foto:</span> <?= txt(f + 1) ?> / <?= txt(fotosUnificadas.length) ?></div>
-                  <div class="caption-row"><span class="caption-label">Ambiente/Estrutura:</span> <?= txt(nomeAmbFoto) ?></div>
-                  <div class="caption-row"><span class="caption-label">Tipo:</span> <?= txt(tipoObservacaoFoto(foto)) ?></div>
-                  <? if (legendaTecnica) { ?><div class="caption-row"><span class="caption-label">Legenda técnica:</span> <?= txt(legendaTecnica) ?></div><? } ?>
-                  <? if (componentesFoto) { ?><div class="caption-row"><span class="caption-label">Componentes:</span> <?= txt(componentesFoto) ?></div><? } ?>
-                  <? if (obsAmbFoto) { ?><div class="caption-row"><span class="caption-label">Obs. ambiente:</span> <?= txt(obsAmbFoto) ?></div><? } ?>
-                  <? if (anamFoto) { ?><div class="caption-row"><span class="caption-label">Diagnóstico:</span> <?= txt(anamFoto) ?></div><? } ?>
-                  <div class="caption-row small"><span class="caption-label">Padrão:</span> 10x12 sem corte, enquadrada ao quadro documental<? if (foto.largura || foto.altura || foto.tamanhoBytes) { ?> - <?= txt((foto.largura || '') + 'x' + (foto.altura || '') + (foto.tamanhoBytes ? ' | ' + foto.tamanhoBytes + ' bytes' : '')) ?><? } ?></div>
-                  <? if (hashFotoCurto) { ?><div class="caption-row small"><span class="caption-label">Hash/ID:</span> <?= txt(hashFotoCurto) ?></div><? } ?>
-                </div>
               </div>
             <? } ?>
+          </div>
+          <div class="photo-legend-env">
+            <div class="caption-row"><span class="caption-label">Legenda técnica consolidada:</span> Galeria fotográfica do ambiente <?= txt(grupoFotos.nome) ?>.</div>
+            <div class="caption-row"><span class="caption-label">Códigos das fotos:</span> <?= txt(codigosGrupo.join(', ')) ?></div>
+            <div class="caption-row"><span class="caption-label">Tipo de observação:</span> <?= txt(Object.keys(tiposGrupo).join('; ') || 'Registro fotográfico técnico do ambiente') ?></div>
+            <? if (componentesGrupo) { ?><div class="caption-row"><span class="caption-label">Componentes avaliados:</span> <?= txt(componentesGrupo) ?></div><? } ?>
+            <? if (obsGrupo) { ?><div class="caption-row"><span class="caption-label">Observações verificadas:</span> <?= txt(obsGrupo) ?></div><? } ?>
+            <? if (anamGrupo) { ?><div class="caption-row"><span class="caption-label">Anamnese constatada:</span> <?= txt(anamGrupo) ?></div><? } ?>
+            <div class="caption-row"><span class="caption-label">Padrão documental das imagens:</span> 10x12 sem corte, com enquadramento integral da evidência no quadro fotográfico.</div>
+            <? if (hashesGrupo.length) { ?><div class="caption-row small"><span class="caption-label">Hash/ID resumido das evidências:</span> <?= txt(hashesGrupo.join(' | ')) ?></div><? } ?>
           </div>
         </div>
       <? } ?>
