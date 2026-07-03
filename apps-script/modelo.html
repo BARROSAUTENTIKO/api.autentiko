@@ -259,6 +259,22 @@
       display: block;
       background: #ffffff;
     }
+    .photo-missing {
+      width: 100%;
+      height: 3.55cm;
+      border-bottom: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #64748b;
+      display: table;
+      text-align: center;
+      font-size: 8px;
+      line-height: 1.25;
+      padding: 8px;
+    }
+    .photo-missing span {
+      display: table-cell;
+      vertical-align: middle;
+    }
     .photo-caption {
       font-size: 7.25px;
       color: #334155;
@@ -707,16 +723,35 @@
 
   var fotosUnificadas = [];
   var fotosKeys = {};
+
+  function fotoTemEmbedValido(foto) {
+    foto = foto || {};
+    var src = foto.embed || foto.dataUrl || foto.FOTO_DATA_URL || '';
+    return /^data:image\//i.test(String(src || ''));
+  }
+
   function adicionarFoto(foto, codigoAmbiente) {
     foto = foto || {};
     var url = foto.url || foto.FOTO_URL || foto.driveUrl || foto.directViewUrl || '';
     var embed = foto.embed || foto.dataUrl || foto.FOTO_DATA_URL || '';
-    var hash = foto.hash || foto.HASH_FOTO || url || embed || JSON.stringify(foto);
+    var arquivoId = foto.arquivoId || foto.fileId || foto.ARQUIVO_ID || '';
+    var hash = foto.hash || foto.HASH_FOTO || arquivoId || url || embed || JSON.stringify(foto);
     var ambienteKey = codigoAmbiente || foto.ambienteCodigo || foto.ambiente || foto.AMBIENTE || foto.local || '';
-    var key = String(ambienteKey || '') + '::' + String(hash || '') + '::' + String(url || '');
-    if (fotosKeys[key]) return;
-    fotosKeys[key] = true;
+    var ambienteCodigoKey = '';
+    var mAmbKey = String(ambienteKey || '').match(/amb_(\d+)/i);
+    if (mAmbKey && mAmbKey[1]) ambienteCodigoKey = 'amb_' + mAmbKey[1];
+    if (ambienteCodigoKey && ambientesPorCodigo[ambienteCodigoKey]) ambienteKey = ambientesPorCodigo[ambienteCodigoKey].nome;
     if (codigoAmbiente && !foto.ambienteCodigo) foto.ambienteCodigo = codigoAmbiente;
+    var key = String(ambienteKey || foto.ambienteCodigo || '').trim().toUpperCase() + '::' + String(hash || '').trim();
+    if (fotosKeys[key] !== undefined) {
+      var existenteIdx = fotosKeys[key];
+      var existente = fotosUnificadas[existenteIdx] || {};
+      if (!fotoTemEmbedValido(existente) && fotoTemEmbedValido(foto)) {
+        fotosUnificadas[existenteIdx] = foto;
+      }
+      return;
+    }
+    fotosKeys[key] = fotosUnificadas.length;
     fotosUnificadas.push(foto);
   }
   fotosSafe.forEach(function(f) { adicionarFoto(f, ''); });
@@ -1005,7 +1040,8 @@
               var foto = itemGrupo.foto || {};
               var f = itemGrupo.indice || 0;
               var srcFoto = imgSrc(foto.embed || foto.dataUrl || foto.url || foto.FOTO_URL || foto.thumbnailUrl || foto.FOTO_THUMB_URL || '');
-              if (!srcFoto) continue;
+              var srcFotoIncorporado = /^data:image\//i.test(String(srcFoto || ''));
+              if (!srcFoto && !hashCurtoFoto(foto)) continue;
               var ambFoto = ambienteDaFoto(foto);
               var nomeAmbFoto = nomeAmbienteFoto(foto);
               var obsAmbFoto = ambFoto && ambFoto.campos.obs ? ambFoto.campos.obs : '';
@@ -1015,7 +1051,11 @@
               var hashFotoCurto = hashCurtoFoto(foto);
             ?>
               <div class="photo-card">
-                <img class="photo" src="<?!= srcFoto ?>" alt="Foto da vistoria">
+                <? if (srcFotoIncorporado) { ?>
+                  <img class="photo" src="<?!= srcFoto ?>" alt="Foto da vistoria">
+                <? } else { ?>
+                  <div class="photo-missing"><span>Imagem não incorporada ao PDF. Conferir arquivo original pelo hash/ID e pela aba FOTOS_LAUDO.</span></div>
+                <? } ?>
                 <div class="photo-caption">
                   <div class="caption-row"><span class="caption-label">Foto:</span> <?= txt(f + 1) ?> / <?= txt(fotosUnificadas.length) ?></div>
                   <div class="caption-row"><span class="caption-label">Ambiente/Estrutura:</span> <?= txt(nomeAmbFoto) ?></div>

@@ -3,8 +3,8 @@
    Performance, cache, upload compacto e laudo documental.
    ========================================================= */
 
-var AUTENTIKO_PATCH_VERSION_V6 = 'V12_FOTOS_COMPACTAS_RASCUNHO_20260703';
-var AUT_MODELO_PDF_VERSION_V6 = 'MODELO_PALMER_FOTOS_AMBIENTE_COMPACTAS_20260703';
+var AUTENTIKO_PATCH_VERSION_V6 = 'V13_FOTOS_PDF_DEDUP_EMBED_20260703';
+var AUT_MODELO_PDF_VERSION_V6 = 'MODELO_PALMER_FOTOS_DEDUP_EMBED_20260703';
 var PALMER_LAUDO_LOGO_OFICIAL = 'https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png?sha=665353158D30C2184BF1061A92EFD6D7F3492226D31A76FA46E01CC2620ED47A';
 var PALMER_MARCADAGUA_OFICIAL = PALMER_LAUDO_LOGO_OFICIAL;
 var AUT_WEBAPP_URL_PUBLICA_V7 = 'https://script.google.com/macros/s/AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme/exec';
@@ -1947,6 +1947,7 @@ function apiEmitirLaudoPdf(idLaudo, forcarGeracao) {
       return { sucesso: false, ok: false, msg: 'Este laudo ainda está em rascunho. Finalize e tranque o laudo antes de emitir o PDF documental.' };
     }
     var hashBase = rowObj.HASH_LAUDO || AUT_HASH_(JSON.stringify(rowObj) + JSON.stringify(payload));
+    var fotosSincronizadas = AUT_VINCULAR_FOTOS_(ss, idReal, numeroLaudo, payload);
     var fotos = AUT_FOTOS_PDF_(ss, idReal, numeroLaudo);
     var hashFotos = fotos.map(function(f) { return f.hash || f.url || f.nome || ''; }).join('|');
     var historicoAlteracoes = AUT_GET_(rawObj, ['HISTORICO_ALTERACOES']) || AUT_GET_(rowObj, ['HISTORICO_ALTERACOES']) || AUT_GET_(payload, ['__historico_alteracoes']);
@@ -2006,7 +2007,8 @@ function apiEmitirLaudoPdf(idLaudo, forcarGeracao) {
       idDocumento: idDocumento,
       hashDocumento: pdfHash,
       manifestoUrl: manifestoUrl,
-      qtdFotos: fotos.length
+      qtdFotos: fotos.length,
+      fotosSincronizadasAntesPdf: fotosSincronizadas
     }, hashBase, pdfHash);
     AUT_INVALIDAR_CACHES_();
     return { sucesso: true, ok: true, url: file.getUrl(), msg: 'PDF gerado com manifesto, QR Code e hash documental.', fotos: fotos.length, cachePdf: false, manifestoUrl: manifestoUrl, hashDocumento: pdfHash };

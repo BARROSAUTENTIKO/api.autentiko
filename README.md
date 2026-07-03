@@ -18,8 +18,8 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `50`
-- Deployment: `AUTENTIKO fotos compactas e rascunhos 2026-07-03`
+- Versao publicada: `51`
+- Deployment: `AUTENTIKO corrige fotos quebradas no PDF 2026-07-03`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -73,6 +73,13 @@ Arquivos principais:
 - O PDF le imagens do Drive pelo `fileId` antes de tentar URL publica/thumbnail.
 - O registro fotografico do laudo foi agrupado por ambiente, com miniaturas tecnicas em 3 colunas quando houver espaco.
 - Rascunhos e revisoes retornam o total real de fotos vinculadas, mesmo quando nenhuma foto nova foi inserida naquele salvamento.
+
+## Correcao de fotos quebradas no PDF @51
+
+- O modelo deduplica fotos pelo ambiente canonico + hash, evitando cards duplicados com `src` quebrado.
+- Quando a mesma evidencia existe no payload e na aba `FOTOS_LAUDO`, o PDF prefere a versao com `data:image` embutido.
+- Antes de emitir o PDF, o backend tenta sincronizar fotos do payload para `FOTOS_LAUDO`.
+- Se alguma imagem ainda chegar sem incorporacao valida, o PDF registra quadro tecnico em vez de icone quebrado.
 
 ## Revisao de seguranca @43
 

@@ -86,3 +86,10 @@
 - Conferir que nenhuma foto é cortada; a imagem deve ficar inteira dentro do quadro.
 - Testar a mesma foto em dois ambientes diferentes e confirmar que ela aparece nos dois contextos.
 - Executar `apiDiagnosticarFotosLaudo(id)` e confirmar `fotosPreparadasPdf` igual ou maior que as fotos esperadas.
+
+## 12. Fotos quebradas no PDF @51
+- Emitir novamente o laudo `35601524` forçando nova geração após a versão 51.
+- Conferir que as fotos duplicadas por hash não geram cards com ícone quebrado.
+- Conferir que o PDF não contém imagem quebrada nas páginas de registro fotográfico.
+- Conferir se a auditoria `EMITIR_PDF_COM_MANIFESTO` registra `fotosSincronizadasAntesPdf`.
+- Se aparecer quadro de imagem não incorporada, revisar a respectiva linha em `FOTOS_LAUDO` pelo hash/ID.

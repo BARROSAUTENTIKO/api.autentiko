@@ -3,7 +3,7 @@
   "project": "AUTENTIKO OK CHECK / Palmer Imóveis - Vistorias",
   "apps_script_project_id": "1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8",
   "apps_script_deployment_id": "AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme",
-  "published_version": 50,
+  "published_version": 51,
   "files": [
     "CHECKLIST_TESTES.md",
     "Code.gs",
@@ -22,9 +22,9 @@
     "Code.gs": 166621,
     "Index.html": 132615,
     "Sign.html": 46077,
-    "ZZZ_V6_Final.gs": 86992,
+    "ZZZ_V6_Final.gs": 87120,
     "ZZZ_Z_AUTENTIKO_SIGN.gs": 47531,
-    "modelo.html": 48372
+    "modelo.html": 49976
   },
   "required_pdf_template_name": "modelo.html",
   "official_palmer_logo": "https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png",
@@ -46,12 +46,14 @@
     "edit_open_id_number_fallback": true
   },
   "photos": {
-    "version": 50,
+    "version": 51,
     "browser_compression": "800x960 JPEG quality 0.58, framed without crop",
     "upload_strategy": "sequential with 3 attempts per photo",
     "pdf_layout": "grouped by environment, 3 compact cards per row when space allows",
     "pdf_image_source": "Drive blob by fileId before public URL fallback",
     "drafts_preserve_photo_rows": true,
-    "dedupe_key": "laudo + ambiente + hash + fileId + url"
+    "dedupe_key": "laudo + ambiente + hash + fileId + url",
+    "pdf_dedupe_fix": "modelo deduplica por ambiente canonico + hash e prefere data:image embutido",
+    "pdf_before_render_sync": true
   }
 }
