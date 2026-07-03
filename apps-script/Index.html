@@ -1844,8 +1844,9 @@ input[type="number"]::placeholder,
     /* PATCH V6 — upload rápido, cache de emissão e fotos sem corte */
     var pdfsEmEmissaoV6 = {};
 
-    var FOTO_PADRAO_W = 1000;
-    var FOTO_PADRAO_H = 1200;
+    var FOTO_PADRAO_W = 800;
+    var FOTO_PADRAO_H = 960;
+    var FOTO_QUALIDADE_JPEG = 0.58;
 
     function calcularBytesDataUrl(dataUrl) {
       var base64 = String(dataUrl || '').split(',')[1] || '';
@@ -1899,7 +1900,7 @@ input[type="number"]::placeholder,
             var nx = Math.round((W - nw) / 2);
             var ny = Math.round((H - nh) / 2);
             ctx.drawImage(img, nx, ny, nw, nh);
-            var dataUrl = canvas.toDataURL('image/jpeg', 0.64);
+            var dataUrl = canvas.toDataURL('image/jpeg', FOTO_QUALIDADE_JPEG);
             resolve({ dataUrl: dataUrl, largura: W, altura: H, tamanhoBytes: calcularBytesDataUrl(dataUrl), original: event.target.result });
           };
           img.onerror = function() {
@@ -1934,10 +1935,18 @@ input[type="number"]::placeholder,
         return;
       }
 
+      var invalidas = files.filter(function(file) { return !/^image\//i.test(String(file.type || '')); }).length;
+      files = files.filter(function(file) { return /^image\//i.test(String(file.type || '')); });
+      if (invalidas) mostrarToast(invalidas + ' arquivo(s) ignorado(s). Envie somente imagens.', 'var(--warning)');
+      if (!files.length) {
+        input.value = '';
+        return;
+      }
+
       var urlsAtuais = lerFotosHidden(hiddenUrls);
       var ambienteEl = document.querySelector('[name="' + idPrefix + '_tipo_ambiente"]');
       var ambienteNome = ambienteEl ? ambienteEl.value : idPrefix;
-      var concorrencia = 2;
+      var concorrencia = 1;
       var indice = 0;
       var falhas = 0;
       uploadsPendentes += files.length;
@@ -1950,6 +1959,25 @@ input[type="number"]::placeholder,
             .withFailureHandler(reject)
             .uploadImagemVistoria(base64, nomeArquivo);
         });
+      }
+
+      function aguardarUpload(ms) {
+        return new Promise(function(resolve) { setTimeout(resolve, ms); });
+      }
+
+      async function uploadComTentativas(base64, nomeArquivo) {
+        var ultimoErro = null;
+        for (var tentativa = 1; tentativa <= 3; tentativa++) {
+          try {
+            var res = await uploadBackend(base64, nomeArquivo);
+            if (res && res.sucesso) return res;
+            ultimoErro = res && res.msg ? res.msg : 'Falha sem detalhe no Drive';
+          } catch (err) {
+            ultimoErro = err && err.message ? err.message : String(err || 'Falha no Drive');
+          }
+          if (tentativa < 3) await aguardarUpload(650 * tentativa);
+        }
+        return { sucesso: false, msg: ultimoErro || 'Falha definitiva no upload da foto.' };
       }
 
       async function enviarUma(posicao) {
@@ -1976,7 +2004,7 @@ input[type="number"]::placeholder,
               '<div class="foto-loader">Drive ' + (posicao + 1) + '/' + files.length + '</div>';
           }
 
-          var res = await uploadBackend(pacote.dataUrl, nomeArquivo);
+          var res = await uploadComTentativas(pacote.dataUrl, nomeArquivo);
           var wrap = document.getElementById('wrap_' + imgId);
           if (res && res.sucesso) {
             var fotoObj = {

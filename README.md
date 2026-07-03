@@ -18,8 +18,8 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `48`
-- Deployment: `AUTENTIKO correcao abrir edicao laudo 2026-07-02`
+- Versao publicada: `50`
+- Deployment: `AUTENTIKO fotos compactas e rascunhos 2026-07-03`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -64,6 +64,15 @@ Arquivos principais:
 - O botao `Editar/Continuar rascunho` envia ID e numero do laudo como fallback.
 - A busca do backend aceita ID, numero, codigo e ID de documento com comparacao tolerante a espacos e formatos.
 - Adicionada API administrativa de diagnostico `apiDiagnosticarEdicaoLaudo`.
+
+## Correcao fotos compactas e rascunhos @50
+
+- Upload de fotos passa a compactar no navegador em 800x960, enquadrado sem corte no padrao documental 10x12.
+- Envio ao Drive ficou sequencial, com 3 tentativas por foto, reduzindo falhas do `google.script.run` com lotes grandes.
+- O backend vincula fotos por laudo + ambiente + hash/fileId/url, evitando sumico quando a mesma evidencia aparece em mais de um ambiente.
+- O PDF le imagens do Drive pelo `fileId` antes de tentar URL publica/thumbnail.
+- O registro fotografico do laudo foi agrupado por ambiente, com miniaturas tecnicas em 3 colunas quando houver espaco.
+- Rascunhos e revisoes retornam o total real de fotos vinculadas, mesmo quando nenhuma foto nova foi inserida naquele salvamento.
 
 ## Revisao de seguranca @43
 

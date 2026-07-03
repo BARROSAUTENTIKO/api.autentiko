@@ -3,8 +3,8 @@
    Performance, cache, upload compacto e laudo documental.
    ========================================================= */
 
-var AUTENTIKO_PATCH_VERSION_V6 = 'V11_EDICAO_LAUDO_SERIALIZAVEL_20260702';
-var AUT_MODELO_PDF_VERSION_V6 = 'MODELO_PALMER_RELATORIO_TECNICO_RASCUNHO_20260702';
+var AUTENTIKO_PATCH_VERSION_V6 = 'V12_FOTOS_COMPACTAS_RASCUNHO_20260703';
+var AUT_MODELO_PDF_VERSION_V6 = 'MODELO_PALMER_FOTOS_AMBIENTE_COMPACTAS_20260703';
 var PALMER_LAUDO_LOGO_OFICIAL = 'https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png?sha=665353158D30C2184BF1061A92EFD6D7F3492226D31A76FA46E01CC2620ED47A';
 var PALMER_MARCADAGUA_OFICIAL = PALMER_LAUDO_LOGO_OFICIAL;
 var AUT_WEBAPP_URL_PUBLICA_V7 = 'https://script.google.com/macros/s/AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme/exec';
@@ -300,14 +300,16 @@ function AUT_EXTRAIR_FOTOS_PAYLOAD_(dados) {
       if (!url && fileId) url = 'https://drive.google.com/file/d/' + fileId + '/view';
       if (url || dataUrl) {
         var hash = valor.hash || AUT_HASH_(url + dataUrl + fileId);
-        if (!hashes[hash]) {
-          hashes[hash] = true;
-          var ambiente = ambienteDoCaminho(caminho, valor);
+        var ambiente = ambienteDoCaminho(caminho, valor);
+        var codigoAmbiente = codigoDoCaminho(caminho, valor);
+        var chaveFoto = [codigoAmbiente, ambiente, valor.fotoId || valor.id || '', hash, fileId, url].join('::');
+        if (!hashes[chaveFoto]) {
+          hashes[chaveFoto] = true;
           var tipoObs = valor.tipoObservacao || valor.tipo_observacao || valor.item || 'Registro fotográfico técnico do ambiente';
           fotos.push({
             id: valor.fotoId || valor.id || '',
             ambiente: ambiente,
-            ambienteCodigo: codigoDoCaminho(caminho, valor),
+            ambienteCodigo: codigoAmbiente,
             item: valor.item || tipoObs,
             tipoObservacao: tipoObs,
             legendaTecnica: valor.legendaTecnica || valor.legenda || ('Registro fotográfico padronizado do ambiente ' + ambiente + '.'),
@@ -372,6 +374,32 @@ function uploadImagemVistoria(base64Data, nomeArquivo) {
   }
 }
 
+function AUT_CHAVE_FOTO_LAUDO_V12_(idLaudo, ambiente, hash, fileId, url) {
+  return [
+    String(idLaudo || '').trim(),
+    AUT_NORM_(ambiente || ''),
+    String(hash || '').trim(),
+    String(fileId || '').trim(),
+    String(url || '').trim()
+  ].join('::');
+}
+
+function AUT_CONTAR_FOTOS_LAUDO_V12_(ss, idLaudo, numeroLaudo) {
+  var sh = ss.getSheetByName('FOTOS_LAUDO');
+  if (!sh || sh.getLastRow() < 2) return 0;
+  var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+  var headers = values[0];
+  var count = 0;
+  for (var r = 1; r < values.length; r++) {
+    var obj = AUT_ROW_TO_OBJ_(headers, values[r]);
+    var rowId = AUT_GET_(obj, ['ID_LAUDO']);
+    var rowNum = AUT_GET_(obj, ['NUMERO_LAUDO']);
+    if (String(rowId) !== String(idLaudo) && String(rowNum) !== String(numeroLaudo)) continue;
+    count++;
+  }
+  return count;
+}
+
 function AUT_VINCULAR_FOTOS_(ss, idLaudo, numeroLaudo, dados) {
   var fotos = AUT_EXTRAIR_FOTOS_PAYLOAD_(dados);
   if (!fotos.length) return 0;
@@ -382,7 +410,12 @@ function AUT_VINCULAR_FOTOS_(ss, idLaudo, numeroLaudo, dados) {
     var headersAtuais = atuais[0];
     for (var i = 1; i < atuais.length; i++) {
       var atual = AUT_ROW_TO_OBJ_(headersAtuais, atuais[i]);
-      jaExiste[String(AUT_GET_(atual, ['ID_LAUDO'])) + '::' + String(AUT_GET_(atual, ['HASH_FOTO']))] = true;
+      var rowId = AUT_GET_(atual, ['ID_LAUDO']);
+      var rowNum = AUT_GET_(atual, ['NUMERO_LAUDO']);
+      if (String(rowId) !== String(idLaudo) && String(rowNum) !== String(numeroLaudo)) continue;
+      var rowUrl = AUT_GET_(atual, ['FOTO_URL', 'URL']);
+      var rowFileId = AUT_GET_(atual, ['ARQUIVO_ID']) || extractDriveId_(rowUrl);
+      jaExiste[AUT_CHAVE_FOTO_LAUDO_V12_(idLaudo, AUT_GET_(atual, ['AMBIENTE']), AUT_GET_(atual, ['HASH_FOTO']), rowFileId, rowUrl)] = true;
     }
   }
 
@@ -403,13 +436,14 @@ function AUT_VINCULAR_FOTOS_(ss, idLaudo, numeroLaudo, dados) {
     if (!url && fileId) url = 'https://drive.google.com/file/d/' + fileId + '/view';
     if (!url) return;
     var hash = f.hash || AUT_HASH_(url + fileId + f.nome);
-    var chave = String(idLaudo) + '::' + String(hash);
+    var ambienteFoto = f.ambiente || '';
+    var chave = AUT_CHAVE_FOTO_LAUDO_V12_(idLaudo, ambienteFoto, hash, fileId, url);
     if (jaExiste[chave]) return;
     rows.push({
       ID_FOTO: f.id || ('FOTO_' + Date.now() + '_' + Math.floor(Math.random() * 9999)),
       ID_LAUDO: idLaudo,
       NUMERO_LAUDO: numeroLaudo,
-      AMBIENTE: f.ambiente || '',
+      AMBIENTE: ambienteFoto,
       ITEM: f.item || '',
       TIPO_OBSERVACAO: f.tipoObservacao || f.item || 'Registro fotográfico técnico do ambiente',
       LEGENDA_TECNICA: f.legendaTecnica || '',
@@ -1401,12 +1435,14 @@ function apiSalvarVistoria(dados) {
     AUT_SET_STATUS_PROCESSO_V7_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, 'REGISTRADO');
     var fotosRemovidas = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
     var qtdFotos = AUT_VINCULAR_FOTOS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
+    var qtdFotosTotal = AUT_CONTAR_FOTOS_LAUDO_V12_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO);
     AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, registro.ID_LAUDO);
     var qtdItens = AUT_VINCULAR_AMBIENTES_ITENS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosLimpos);
     AUT_APPEND_AUDITORIA_V7_(ss, 'CRIAR_LAUDO_REGISTRADO', registro.ID_LAUDO, {
       numeroLaudo: registro.NUMERO_LAUDO,
       fotosRemovidas: fotosRemovidas,
-      qtdFotos: qtdFotos,
+      qtdFotos: qtdFotosTotal,
+      qtdFotosInseridas: qtdFotos,
       qtdItens: qtdItens
     }, '', registro.HASH_LAUDO);
     AUT_INVALIDAR_CACHES_();
@@ -1418,7 +1454,8 @@ function apiSalvarVistoria(dados) {
       idLaudo: registro.ID_LAUDO,
       numeroLaudo: registro.NUMERO_LAUDO,
       status: 'REGISTRADO',
-      fotos: qtdFotos,
+      fotos: qtdFotosTotal,
+      fotosInseridas: qtdFotos,
       itens: qtdItens,
       msg: 'Laudo registrado com segurança. Fotos ficaram vinculadas por URL/ID, sem base64 no payload.'
     };
@@ -1494,6 +1531,7 @@ function apiSalvarRascunhoVistoria(idLaudo, dados) {
     });
     var fotosRemovidas = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
     var qtdFotos = AUT_VINCULAR_FOTOS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosOriginais);
+    var qtdFotosTotal = AUT_CONTAR_FOTOS_LAUDO_V12_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO);
     AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, registro.ID_LAUDO);
     var qtdItens = AUT_VINCULAR_AMBIENTES_ITENS_(ss, registro.ID_LAUDO, registro.NUMERO_LAUDO, dadosLimpos);
     AUT_APPEND_AUDITORIA_V7_(ss, atualizarMesmoRegistro ? 'ATUALIZAR_RASCUNHO_LAUDO' : 'CRIAR_RASCUNHO_LAUDO', registro.ID_LAUDO, {
@@ -1501,7 +1539,8 @@ function apiSalvarRascunhoVistoria(idLaudo, dados) {
       numeroLaudo: registro.NUMERO_LAUDO,
       alteracoes: alteracoes,
       fotosRemovidas: fotosRemovidas,
-      qtdFotos: qtdFotos,
+      qtdFotos: qtdFotosTotal,
+      qtdFotosInseridas: qtdFotos,
       qtdItens: qtdItens
     }, hashAnterior, hashNovo);
     AUT_INVALIDAR_CACHES_();
@@ -1514,7 +1553,8 @@ function apiSalvarRascunhoVistoria(idLaudo, dados) {
       idAnterior: editadoDe || '',
       numeroLaudo: registro.NUMERO_LAUDO,
       status: 'RASCUNHO',
-      fotos: qtdFotos,
+      fotos: qtdFotosTotal,
+      fotosInseridas: qtdFotos,
       itens: qtdItens,
       msg: 'Rascunho salvo. Você pode voltar depois, editar e finalizar o laudo quando estiver completo.'
     };
@@ -1589,13 +1629,15 @@ function apiAtualizarVistoria(idLaudo, dados) {
       AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, idAnterior);
       var fotosRemovidasFinal = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, idAnterior, registroFinal.NUMERO_LAUDO, dadosOriginais);
       var fotosFinal = AUT_VINCULAR_FOTOS_(ss, idAnterior, registroFinal.NUMERO_LAUDO, dadosOriginais);
+      var fotosFinalTotal = AUT_CONTAR_FOTOS_LAUDO_V12_(ss, idAnterior, registroFinal.NUMERO_LAUDO);
       var itensFinal = AUT_VINCULAR_AMBIENTES_ITENS_(ss, idAnterior, registroFinal.NUMERO_LAUDO, dadosFinalizados);
       AUT_APPEND_AUDITORIA_V7_(ss, 'FINALIZAR_RASCUNHO_LAUDO', idAnterior, {
         idOrigem: editadoDe || '',
         numeroLaudo: registroFinal.NUMERO_LAUDO,
         alteracoes: alteracoes,
         fotosRemovidas: fotosRemovidasFinal,
-        qtdFotos: fotosFinal,
+        qtdFotos: fotosFinalTotal,
+        qtdFotosInseridas: fotosFinal,
         qtdItens: itensFinal
       }, hashAnterior, hashFinal);
       AUT_INVALIDAR_CACHES_();
@@ -1609,7 +1651,8 @@ function apiAtualizarVistoria(idLaudo, dados) {
         hashAnterior: hashAnterior,
         hashAtual: hashFinal,
         status: 'REGISTRADO',
-        fotos: fotosFinal,
+        fotos: fotosFinalTotal,
+        fotosInseridas: fotosFinal,
         itens: itensFinal,
         msg: 'Rascunho finalizado e trancado como laudo registrado. O PDF já pode ser emitido.'
       };
@@ -1646,6 +1689,7 @@ function apiAtualizarVistoria(idLaudo, dados) {
     AUT_SET_STATUS_PROCESSO_V7_(ss, idNovo, registro.NUMERO_LAUDO, 'REGISTRADO');
     var fotosRemovidasRevisao = AUT_APLICAR_FOTOS_REMOVIDAS_V7_(ss, idNovo, registro.NUMERO_LAUDO, dadosOriginais);
     var qtdFotos = AUT_VINCULAR_FOTOS_(ss, idNovo, registro.NUMERO_LAUDO, dadosOriginais);
+    var qtdFotosTotal = AUT_CONTAR_FOTOS_LAUDO_V12_(ss, idNovo, registro.NUMERO_LAUDO);
     AUT_REMOVER_AMBIENTES_ITENS_LAUDO_V7_(ss, idNovo);
     var qtdItens = AUT_VINCULAR_AMBIENTES_ITENS_(ss, idNovo, registro.NUMERO_LAUDO, dadosLimpos);
     AUT_APPEND_AUDITORIA_V7_(ss, 'EDITAR_LAUDO_REVISAO', idNovo, {
@@ -1654,7 +1698,8 @@ function apiAtualizarVistoria(idLaudo, dados) {
       numeroNovo: registro.NUMERO_LAUDO,
       alteracoes: alteracoes,
       fotosRemovidas: fotosRemovidasRevisao,
-      qtdFotos: qtdFotos,
+      qtdFotos: qtdFotosTotal,
+      qtdFotosInseridas: qtdFotos,
       qtdItens: qtdItens
     }, hashAnterior, hashNovo);
     AUT_INVALIDAR_CACHES_();
@@ -1667,7 +1712,8 @@ function apiAtualizarVistoria(idLaudo, dados) {
       numeroLaudo: registro.NUMERO_LAUDO,
       hashAnterior: hashAnterior,
       hashAtual: hashNovo,
-      fotos: qtdFotos,
+      fotos: qtdFotosTotal,
+      fotosInseridas: qtdFotos,
       itens: qtdItens,
       msg: 'Edição salva como nova revisão documental. ID e hash foram atualizados e as alterações ficaram registradas no rodapé do laudo.'
     };
@@ -1745,6 +1791,19 @@ function apiDiagnosticarLogoLaudo() {
   }
 }
 
+function AUT_DRIVE_IMAGE_DATA_URL_V12_(fileId) {
+  fileId = String(fileId || '').trim();
+  if (!fileId) return '';
+  try {
+    var blob = DriveApp.getFileById(fileId).getBlob();
+    var tipo = blob.getContentType() || 'image/jpeg';
+    if (!/^image\//i.test(String(tipo || ''))) tipo = 'image/jpeg';
+    return 'data:' + tipo + ';base64,' + Utilities.base64Encode(blob.getBytes());
+  } catch (eDrive) {
+    return '';
+  }
+}
+
 function AUT_IMAGEM_PDF_DATA_V6_(url, thumb, hash) {
   url = String(url || '').trim();
   thumb = String(thumb || '').trim();
@@ -1753,6 +1812,8 @@ function AUT_IMAGEM_PDF_DATA_V6_(url, thumb, hash) {
 
   var driveId = extractDriveId_(url) || extractDriveId_(thumb);
   if (driveId) {
+    var directBlob = AUT_DRIVE_IMAGE_DATA_URL_V12_(driveId);
+    if (/^data:image\//i.test(String(directBlob || ''))) return directBlob;
     var driveUrl = 'https://drive.google.com/file/d/' + driveId + '/view';
     var fromDrive = AUT_BASE64_IMAGEM_CACHE_(driveUrl, 'FOTO_DRIVE_PDF_10X12_' + hash);
     if (/^data:image\//i.test(String(fromDrive || ''))) return fromDrive;
@@ -1776,6 +1837,8 @@ function AUT_FOTOS_PDF_(ss, idLaudo, numeroLaudo) {
     var num = AUT_GET_(obj, ['NUMERO_LAUDO']);
     if (String(id) !== String(idLaudo) && String(num) !== String(numeroLaudo)) continue;
     var url = AUT_GET_(obj, ['FOTO_URL', 'URL']);
+    var arquivoId = AUT_GET_(obj, ['ARQUIVO_ID']) || extractDriveId_(url);
+    if (!url && arquivoId) url = 'https://drive.google.com/file/d/' + arquivoId + '/view';
     var oldDataUrl = AUT_GET_(obj, ['FOTO_DATA_URL', 'DATA_URL', 'BASE64']);
     var hash = AUT_GET_(obj, ['HASH_FOTO']) || AUT_HASH_(url);
     var thumb = AUT_GET_(obj, ['FOTO_THUMB_URL']) || (url ? normalizeDriveUrl_(url, 900) : '');
@@ -1794,6 +1857,7 @@ function AUT_FOTOS_PDF_(ss, idLaudo, numeroLaudo) {
       dataUrl: '',
       embed: embed,
       hash: hash,
+      arquivoId: arquivoId,
       largura: AUT_GET_(obj, ['LARGURA']),
       altura: AUT_GET_(obj, ['ALTURA']),
       tamanhoBytes: AUT_GET_(obj, ['TAMANHO_BYTES'])

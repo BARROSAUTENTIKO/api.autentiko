@@ -78,3 +78,11 @@
 - Clicar em `Continuar rascunho` em um rascunho e confirmar que ele abre sem gerar PDF.
 - Testar laudo cujo painel mostra ID e número diferentes; o fallback por número deve localizar o registro.
 - Se falhar, executar `apiDiagnosticarEdicaoLaudo(id, numero)` no Apps Script para confirmar aba/linha encontrada.
+
+## 11. Fotos compactas e rascunhos @50
+- Enviar 6 a 12 fotos em um mesmo ambiente e confirmar que todas ficam com selo `Drive 10x12`.
+- Salvar como rascunho, reabrir e confirmar que as fotos continuam aparecendo na prévia.
+- Emitir PDF final e conferir que as fotos aparecem agrupadas por ambiente, em miniaturas, sem uma foto por página.
+- Conferir que nenhuma foto é cortada; a imagem deve ficar inteira dentro do quadro.
+- Testar a mesma foto em dois ambientes diferentes e confirmar que ela aparece nos dois contextos.
+- Executar `apiDiagnosticarFotosLaudo(id)` e confirmar `fotosPreparadasPdf` igual ou maior que as fotos esperadas.

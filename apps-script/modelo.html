@@ -216,35 +216,56 @@
       color: #334155;
     }
     .photos {
-      margin-top: 8px;
+      margin-top: 6px;
+      font-size: 9px;
+    }
+    .photo-env-group {
+      margin: 8px 0 10px 0;
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+    .photo-env-title {
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid #1d4ed8;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: bold;
+      font-size: 8.8px;
+      text-transform: uppercase;
+      padding: 4px 6px;
+      margin: 0 0 6px 0;
+      page-break-after: avoid;
+    }
+    .photo-grid {
       font-size: 0;
+      margin-right: -1%;
     }
     .photo-card {
-      display: block;
-      width: 10cm;
-      margin: 0 auto 12px auto;
+      display: inline-block;
+      width: 32.15%;
+      margin: 0 1% 7px 0;
       vertical-align: top;
       break-inside: avoid;
       page-break-inside: avoid;
-      font-size: 8.5px;
+      font-size: 7.4px;
       border: 1px solid #cbd5e1;
       background: #ffffff;
     }
     .photo {
-      width: 10cm;
-      height: 12cm;
+      width: 100%;
+      height: 3.55cm;
       object-fit: contain;
       border-bottom: 1px solid #cbd5e1;
       display: block;
       background: #ffffff;
     }
     .photo-caption {
-      font-size: 8.2px;
+      font-size: 7.25px;
       color: #334155;
-      padding: 5px 6px;
-      line-height: 1.2;
+      padding: 4px 5px;
+      line-height: 1.16;
     }
-    .caption-row { margin-bottom: 3px; }
+    .caption-row { margin-bottom: 2px; }
     .caption-label {
       color: #0f172a;
       font-weight: bold;
@@ -691,7 +712,8 @@
     var url = foto.url || foto.FOTO_URL || foto.driveUrl || foto.directViewUrl || '';
     var embed = foto.embed || foto.dataUrl || foto.FOTO_DATA_URL || '';
     var hash = foto.hash || foto.HASH_FOTO || url || embed || JSON.stringify(foto);
-    var key = String(hash || '') + '::' + String(url || '');
+    var ambienteKey = codigoAmbiente || foto.ambienteCodigo || foto.ambiente || foto.AMBIENTE || foto.local || '';
+    var key = String(ambienteKey || '') + '::' + String(hash || '') + '::' + String(url || '');
     if (fotosKeys[key]) return;
     fotosKeys[key] = true;
     if (codigoAmbiente && !foto.ambienteCodigo) foto.ambienteCodigo = codigoAmbiente;
@@ -736,6 +758,24 @@
     if (foto.item || foto.ITEM) return 'Registro fotográfico do item: ' + txt(foto.item || foto.ITEM);
     return 'Registro fotográfico do ambiente';
   }
+
+  function hashCurtoFoto(foto) {
+    var h = String((foto && (foto.hash || foto.HASH_FOTO)) || '').trim();
+    if (!h) return '';
+    return h.length > 18 ? (h.substring(0, 18) + '...') : h;
+  }
+
+  var fotosPorAmbiente = [];
+  var fotosGrupoIndex = {};
+  fotosUnificadas.forEach(function(foto, idx) {
+    var nomeGrupo = nomeAmbienteFoto(foto) || 'Ambiente nao identificado';
+    var keyGrupo = String(nomeGrupo || '').trim().toUpperCase();
+    if (fotosGrupoIndex[keyGrupo] === undefined) {
+      fotosGrupoIndex[keyGrupo] = fotosPorAmbiente.length;
+      fotosPorAmbiente.push({ nome: nomeGrupo, fotos: [] });
+    }
+    fotosPorAmbiente[fotosGrupoIndex[keyGrupo]].fotos.push({ foto: foto, indice: idx });
+  });
 
   function resumoComponentes(amb) {
     if (!amb) return '';
@@ -954,29 +994,41 @@
   <h2>6. Registro fotográfico com legendas técnicas</h2>
   <? if (fotosUnificadas.length) { ?>
     <div class="photos">
-      <? for (var f = 0; f < fotosUnificadas.length; f++) {
-        var foto = fotosUnificadas[f] || {};
-        var srcFoto = imgSrc(foto.embed || foto.dataUrl || foto.url || foto.FOTO_URL || '');
-        if (!srcFoto) continue;
-        var ambFoto = ambienteDaFoto(foto);
-        var nomeAmbFoto = nomeAmbienteFoto(foto);
-        var obsAmbFoto = ambFoto && ambFoto.campos.obs ? ambFoto.campos.obs : '';
-        var anamFoto = ambFoto && ambFoto.anamnese && ambFoto.anamnese.length ? ambFoto.anamnese.join('; ') : '';
-        var componentesFoto = resumoComponentes(ambFoto);
-        var legendaTecnica = foto.legendaTecnica || foto.LEGENDA_TECNICA || '';
+      <? for (var fg = 0; fg < fotosPorAmbiente.length; fg++) {
+        var grupoFotos = fotosPorAmbiente[fg] || { nome: 'Ambiente nao identificado', fotos: [] };
       ?>
-        <div class="photo-card">
-          <img class="photo" src="<?!= srcFoto ?>" alt="Foto da vistoria">
-          <div class="photo-caption">
-            <div class="caption-row"><span class="caption-label">Foto:</span> <?= txt(f + 1) ?> / <?= txt(fotosUnificadas.length) ?></div>
-            <div class="caption-row"><span class="caption-label">Ambiente/Estrutura:</span> <?= txt(nomeAmbFoto) ?></div>
-            <div class="caption-row"><span class="caption-label">Tipo de observação:</span> <?= txt(tipoObservacaoFoto(foto)) ?></div>
-            <? if (legendaTecnica) { ?><div class="caption-row"><span class="caption-label">Legenda técnica:</span> <?= txt(legendaTecnica) ?></div><? } ?>
-            <? if (componentesFoto) { ?><div class="caption-row"><span class="caption-label">Componentes avaliados:</span> <?= txt(componentesFoto) ?></div><? } ?>
-            <? if (obsAmbFoto) { ?><div class="caption-row"><span class="caption-label">Observação do ambiente:</span> <?= txt(obsAmbFoto) ?></div><? } ?>
-            <? if (anamFoto) { ?><div class="caption-row"><span class="caption-label">Diagnóstico/anamnese:</span> <?= txt(anamFoto) ?></div><? } ?>
-            <div class="caption-row small"><span class="caption-label">Padronização:</span> 10x12 sem corte, imagem enquadrada ao quadro documental<? if (foto.largura || foto.altura || foto.tamanhoBytes) { ?> - <?= txt((foto.largura || '') + 'x' + (foto.altura || '') + (foto.tamanhoBytes ? ' | ' + foto.tamanhoBytes + ' bytes' : '')) ?><? } ?></div>
-            <? if (foto.hash || foto.HASH_FOTO) { ?><div class="caption-row small"><span class="caption-label">Hash/ID foto:</span> <?= txt(foto.hash || foto.HASH_FOTO) ?></div><? } ?>
+        <div class="photo-env-group">
+          <div class="photo-env-title">Ambiente/Estrutura: <?= txt(grupoFotos.nome) ?> - <?= txt(grupoFotos.fotos.length) ?> foto(s)</div>
+          <div class="photo-grid">
+            <? for (var gf = 0; gf < grupoFotos.fotos.length; gf++) {
+              var itemGrupo = grupoFotos.fotos[gf] || {};
+              var foto = itemGrupo.foto || {};
+              var f = itemGrupo.indice || 0;
+              var srcFoto = imgSrc(foto.embed || foto.dataUrl || foto.url || foto.FOTO_URL || foto.thumbnailUrl || foto.FOTO_THUMB_URL || '');
+              if (!srcFoto) continue;
+              var ambFoto = ambienteDaFoto(foto);
+              var nomeAmbFoto = nomeAmbienteFoto(foto);
+              var obsAmbFoto = ambFoto && ambFoto.campos.obs ? ambFoto.campos.obs : '';
+              var anamFoto = ambFoto && ambFoto.anamnese && ambFoto.anamnese.length ? ambFoto.anamnese.join('; ') : '';
+              var componentesFoto = resumoComponentes(ambFoto);
+              var legendaTecnica = foto.legendaTecnica || foto.LEGENDA_TECNICA || '';
+              var hashFotoCurto = hashCurtoFoto(foto);
+            ?>
+              <div class="photo-card">
+                <img class="photo" src="<?!= srcFoto ?>" alt="Foto da vistoria">
+                <div class="photo-caption">
+                  <div class="caption-row"><span class="caption-label">Foto:</span> <?= txt(f + 1) ?> / <?= txt(fotosUnificadas.length) ?></div>
+                  <div class="caption-row"><span class="caption-label">Ambiente/Estrutura:</span> <?= txt(nomeAmbFoto) ?></div>
+                  <div class="caption-row"><span class="caption-label">Tipo:</span> <?= txt(tipoObservacaoFoto(foto)) ?></div>
+                  <? if (legendaTecnica) { ?><div class="caption-row"><span class="caption-label">Legenda técnica:</span> <?= txt(legendaTecnica) ?></div><? } ?>
+                  <? if (componentesFoto) { ?><div class="caption-row"><span class="caption-label">Componentes:</span> <?= txt(componentesFoto) ?></div><? } ?>
+                  <? if (obsAmbFoto) { ?><div class="caption-row"><span class="caption-label">Obs. ambiente:</span> <?= txt(obsAmbFoto) ?></div><? } ?>
+                  <? if (anamFoto) { ?><div class="caption-row"><span class="caption-label">Diagnóstico:</span> <?= txt(anamFoto) ?></div><? } ?>
+                  <div class="caption-row small"><span class="caption-label">Padrão:</span> 10x12 sem corte, enquadrada ao quadro documental<? if (foto.largura || foto.altura || foto.tamanhoBytes) { ?> - <?= txt((foto.largura || '') + 'x' + (foto.altura || '') + (foto.tamanhoBytes ? ' | ' + foto.tamanhoBytes + ' bytes' : '')) ?><? } ?></div>
+                  <? if (hashFotoCurto) { ?><div class="caption-row small"><span class="caption-label">Hash/ID:</span> <?= txt(hashFotoCurto) ?></div><? } ?>
+                </div>
+              </div>
+            <? } ?>
           </div>
         </div>
       <? } ?>
