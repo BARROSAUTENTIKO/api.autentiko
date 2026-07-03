@@ -18,8 +18,8 @@ Repositorio publico de publicacao e verificacao do sistema AUTENTIKO-OK CHECK, c
 ## Apps Script
 
 - Project ID: `1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8`
-- Versao publicada: `52`
-- Deployment: `AUTENTIKO galeria por ambiente 2026-07-03`
+- Versao publicada: `55`
+- Deployment: `AUTENTIKO recuperacao de senha token 2026-07-03 hotfix`
 - Planilha principal: `1bs2hGPyYRpe8X1hzLYpHB_4ense7ca7T79hMyWJqqSk`
 
 Arquivos principais:
@@ -87,6 +87,15 @@ Arquivos principais:
 - Cada foto exibe apenas um codigo documental curto, como `F001`, `F002`.
 - A legenda tecnica, observacoes, componentes, hashes e anamnese ficam consolidados uma unica vez por ambiente.
 - A anamnese exibida no laudo foi convertida para linguagem de constatacao no passado, como `verificou-se`, `constatou-se` e `registrou-se`.
+
+## Recuperacao de senha @55
+
+- Tela de login ganhou botao `Recuperar senha por e-mail`.
+- O usuario informa e-mail ou usuario cadastrado e recebe link seguro por e-mail.
+- O link usa `resetId + token`, expira em 1 hora e tem uso unico.
+- O token bruto nao fica salvo; o sistema guarda apenas hash SHA-256 em `PropertiesService`.
+- A nova senha e enviada ao servidor somente em hash SHA-256.
+- O processo registra eventos de auditoria para solicitacao, token invalido e confirmacao de redefinicao.
 
 ## Revisao de seguranca @43
 

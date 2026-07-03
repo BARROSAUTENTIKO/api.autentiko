@@ -3,7 +3,7 @@
    Performance, cache, upload compacto e laudo documental.
    ========================================================= */
 
-var AUTENTIKO_PATCH_VERSION_V6 = 'V14_GALERIA_LEGENDA_AMBIENTE_20260703';
+var AUTENTIKO_PATCH_VERSION_V6 = 'V15_RECUPERACAO_SENHA_TOKEN_20260703';
 var AUT_MODELO_PDF_VERSION_V6 = 'MODELO_PALMER_GALERIA_LEGENDA_AMBIENTE_20260703';
 var PALMER_LAUDO_LOGO_OFICIAL = 'https://i.postimg.cc/TPvjXw7D/Whats-App-Image-2026-06-16-at-15-48-05-removebg-preview.png?sha=665353158D30C2184BF1061A92EFD6D7F3492226D31A76FA46E01CC2620ED47A';
 var PALMER_MARCADAGUA_OFICIAL = PALMER_LAUDO_LOGO_OFICIAL;
@@ -14,6 +14,7 @@ var PALMER_ENDERECO_OFICIAL = 'R. SÃO SEBASTIÃO, 1746, SALA 01, JOÃO PAULO II
 var PALMER_FONE_OFICIAL = '(91) 99283-4665';
 var PALMER_EMAIL_OFICIAL = 'rycky.corretor@gmail.com';
 var PALMER_REPRESENTANTE_LEGAL_OFICIAL = 'RYCKY DE PALMER DIAS';
+var AUT_RESET_SENHA_EXPIRA_MINUTOS_V15 = 60;
 
 function AUT_REGISTRO_HEADERS_V4_() {
   return [
@@ -943,6 +944,9 @@ function doGet(e) {
   if ((params.manifestoAssinatura || params.manifestoassinatura) && typeof AUT_SIGN_RENDER_MANIFESTO_ === 'function') {
     return AUT_SIGN_RENDER_MANIFESTO_(params);
   }
+  if (params.resetSenha || params.recuperarSenha || params.reset) {
+    return AUT_RENDER_RECUPERAR_SENHA_V15_(params);
+  }
   if (params.manifesto || params.m) {
     return AUT_RENDER_MANIFESTO_V7_(params);
   }
@@ -964,6 +968,181 @@ function AUT_ESCAPE_HTML_V7_(v) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function AUT_JSON_SCRIPT_V15_(obj) {
+  return JSON.stringify(obj || {})
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+
+function AUT_TOKEN_SEGURO_V15_(tam) {
+  var raw = Utilities.getUuid() + ':' + Utilities.getUuid() + ':' + new Date().getTime() + ':' + Math.random();
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw, Utilities.Charset.UTF_8);
+  return Utilities.base64EncodeWebSafe(digest).replace(/=+$/g, '').substring(0, tam || 48);
+}
+
+function AUT_RESET_PROP_KEY_V15_(resetId) {
+  return 'AUT_RESET_SENHA_V15_' + String(resetId || '').replace(/[^A-Za-z0-9_-]/g, '');
+}
+
+function AUT_LER_RESET_SENHA_V15_(resetId) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(AUT_RESET_PROP_KEY_V15_(resetId));
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function AUT_SALVAR_RESET_SENHA_V15_(resetId, payload) {
+  PropertiesService.getScriptProperties().setProperty(AUT_RESET_PROP_KEY_V15_(resetId), JSON.stringify(payload || {}));
+}
+
+function AUT_REMOVER_RESET_SENHA_V15_(resetId) {
+  try { PropertiesService.getScriptProperties().deleteProperty(AUT_RESET_PROP_KEY_V15_(resetId)); } catch (e) {}
+}
+
+function AUT_LOCALIZAR_USUARIO_RECUPERACAO_V15_(identificador) {
+  var ss = AUT_SS_FAST_();
+  var sh = ss.getSheetByName('USUARIOS');
+  if (!sh || sh.getLastRow() < 2) return null;
+  var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+  var headers = values[0];
+  var alvo = String(identificador || '').trim().toLowerCase();
+  var alvoNorm = AUT_NORM_(identificador || '');
+  if (!alvo) return null;
+  for (var r = 1; r < values.length; r++) {
+    var obj = AUT_ROW_TO_OBJ_(headers, values[r]);
+    var usuario = String(AUT_GET_(obj, ['USUARIO']) || '').trim();
+    var email = String(AUT_GET_(obj, ['EMAIL']) || '').trim();
+    if (usuario.toLowerCase() === alvo || email.toLowerCase() === alvo || AUT_NORM_(usuario) === alvoNorm || AUT_NORM_(email) === alvoNorm) {
+      return { sheet: sh, rowNumber: r + 1, rowObj: obj, usuario: usuario, email: email, nome: AUT_GET_(obj, ['NOME']) };
+    }
+  }
+  return null;
+}
+
+function apiSolicitarRecuperacaoSenha(identificador) {
+  try {
+    garantirEstruturaDoSistema();
+    identificador = String(identificador || '').trim();
+    if (!identificador) return { sucesso: false, ok: false, msg: 'Informe usuário ou e-mail cadastrado.' };
+
+    var ss = AUT_SS_FAST_();
+    var achado = AUT_LOCALIZAR_USUARIO_RECUPERACAO_V15_(identificador);
+    var msgPadrao = 'Se o cadastro estiver ativo na base, enviaremos um link de recuperação para o e-mail registrado.';
+    if (!achado || !achado.email) {
+      AUT_APPEND_AUDITORIA_V7_(ss, 'SOLICITAR_RECUPERACAO_SENHA_NAO_LOCALIZADO', 'USUARIO', { identificador: identificador }, '', '');
+      return { sucesso: true, ok: true, msg: msgPadrao };
+    }
+
+    var status = String(AUT_GET_(achado.rowObj, ['STATUS']) || '').toUpperCase();
+    if (status === 'BLOQUEADO' || status === 'BLOQUEADA') {
+      AUT_APPEND_AUDITORIA_V7_(ss, 'SOLICITAR_RECUPERACAO_SENHA_BLOQUEADO', achado.usuario || achado.email, { status: status }, '', '');
+      return { sucesso: true, ok: true, msg: msgPadrao };
+    }
+
+    var resetId = 'RST' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyMMddHHmmss') + Math.floor(100000 + Math.random() * 900000);
+    var token = AUT_TOKEN_SEGURO_V15_(48);
+    var tokenHash = AUT_HASH_(token);
+    var expiraEmMs = new Date().getTime() + AUT_RESET_SENHA_EXPIRA_MINUTOS_V15 * 60 * 1000;
+    AUT_SALVAR_RESET_SENHA_V15_(resetId, {
+      resetId: resetId,
+      tokenHash: tokenHash,
+      usuario: achado.usuario || '',
+      email: achado.email || '',
+      nome: achado.nome || '',
+      rowNumber: achado.rowNumber,
+      criadoEm: new Date().toISOString(),
+      expiraEmMs: expiraEmMs,
+      usado: false,
+      tentativas: 0
+    });
+
+    var link = AUT_WEBAPP_URL_PUBLICA_V7 + '?resetSenha=' + encodeURIComponent(resetId) + '&token=' + encodeURIComponent(token);
+    MailApp.sendEmail({
+      to: achado.email,
+      subject: 'Recuperação de senha - AUTENTIKO-OK CHECK',
+      body: 'Olá' + (achado.nome ? ', ' + achado.nome : '') + '.\n\nFoi solicitada uma recuperação de senha para o AUTENTIKO-OK CHECK.\n\nAcesse o link abaixo para criar uma nova senha. O link expira em ' + AUT_RESET_SENHA_EXPIRA_MINUTOS_V15 + ' minutos e só pode ser usado uma vez:\n' + link + '\n\nSe você não solicitou esta recuperação, ignore este e-mail e informe o administrador.\n\nPalmer Imóveis / AUTENTIKO-OK CHECK',
+      htmlBody: '<p>Olá' + AUT_ESCAPE_HTML_V7_(achado.nome ? ', ' + achado.nome : '') + '.</p><p>Foi solicitada uma recuperação de senha para o <strong>AUTENTIKO-OK CHECK</strong>.</p><p><a style="display:inline-block;background:#2563eb;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700" href="' + AUT_ESCAPE_HTML_V7_(link) + '">Redefinir senha</a></p><p>Este link expira em ' + AUT_RESET_SENHA_EXPIRA_MINUTOS_V15 + ' minutos e só pode ser usado uma vez.</p><p>Se você não solicitou esta recuperação, ignore este e-mail e informe o administrador.</p>'
+    });
+
+    AUT_APPEND_AUDITORIA_V7_(ss, 'SOLICITAR_RECUPERACAO_SENHA', achado.usuario || achado.email, {
+      resetId: resetId,
+      emailMascarado: String(achado.email).replace(/^(.{2}).*(@.*)$/, '$1***$2'),
+      expiraEm: new Date(expiraEmMs).toISOString()
+    }, '', tokenHash);
+    return { sucesso: true, ok: true, msg: msgPadrao };
+  } catch (e) {
+    return { sucesso: false, ok: false, msg: 'Erro ao solicitar recuperação de senha: ' + e.message, erro: e.message };
+  }
+}
+
+function AUT_VALIDAR_RESET_SENHA_V15_(resetId, token) {
+  var payload = AUT_LER_RESET_SENHA_V15_(resetId);
+  if (!payload) return { ok: false, msg: 'Link de recuperação não localizado ou já utilizado.' };
+  if (payload.usado) return { ok: false, msg: 'Este link de recuperação já foi utilizado.' };
+  if (Number(payload.expiraEmMs || 0) < new Date().getTime()) {
+    AUT_REMOVER_RESET_SENHA_V15_(resetId);
+    return { ok: false, msg: 'Link de recuperação expirado. Solicite um novo link na tela de login.' };
+  }
+  var tokenHash = AUT_HASH_(String(token || ''));
+  if (tokenHash !== String(payload.tokenHash || '')) {
+    payload.tentativas = Number(payload.tentativas || 0) + 1;
+    AUT_SALVAR_RESET_SENHA_V15_(resetId, payload);
+    if (payload.tentativas >= 5) AUT_REMOVER_RESET_SENHA_V15_(resetId);
+    return { ok: false, msg: 'Token inválido.' };
+  }
+  return { ok: true, payload: payload, tokenHash: tokenHash };
+}
+
+function apiConfirmarRecuperacaoSenha(resetId, token, novaSenhaHash) {
+  try {
+    garantirEstruturaDoSistema();
+    resetId = String(resetId || '').trim();
+    token = String(token || '').trim();
+    novaSenhaHash = String(novaSenhaHash || '').trim().toLowerCase();
+    if (!resetId || !token || !AUT_HASH_VALIDO_(novaSenhaHash)) {
+      return { sucesso: false, ok: false, msg: 'Dados inválidos para redefinição de senha.' };
+    }
+    var ss = AUT_SS_FAST_();
+    var validacao = AUT_VALIDAR_RESET_SENHA_V15_(resetId, token);
+    if (!validacao.ok) {
+      AUT_APPEND_AUDITORIA_V7_(ss, 'RECUPERACAO_SENHA_TOKEN_INVALIDO', resetId, { msg: validacao.msg }, '', '');
+      return { sucesso: false, ok: false, msg: validacao.msg };
+    }
+
+    var achado = AUT_LOCALIZAR_USUARIO_RECUPERACAO_V15_(validacao.payload.usuario || validacao.payload.email);
+    if (!achado) return { sucesso: false, ok: false, msg: 'Usuário não localizado para atualização.' };
+    AUT_ATUALIZAR_ROW_OBJ_(achado.sheet, achado.rowNumber, {
+      SENHA_HASH: novaSenhaHash,
+      ULTIMO_ACESSO: ''
+    });
+    AUT_REMOVER_RESET_SENHA_V15_(resetId);
+    AUT_APPEND_AUDITORIA_V7_(ss, 'CONFIRMAR_RECUPERACAO_SENHA', achado.usuario || achado.email, {
+      resetId: resetId,
+      usuario: achado.usuario || '',
+      emailMascarado: String(achado.email || '').replace(/^(.{2}).*(@.*)$/, '$1***$2')
+    }, validacao.tokenHash, novaSenhaHash);
+    return { sucesso: true, ok: true, msg: 'Senha redefinida com sucesso. Você já pode acessar o sistema.' };
+  } catch (e) {
+    return { sucesso: false, ok: false, msg: 'Erro ao redefinir senha: ' + e.message, erro: e.message };
+  }
+}
+
+function AUT_RENDER_RECUPERAR_SENHA_V15_(params) {
+  params = params || {};
+  var resetId = String(params.resetSenha || params.recuperarSenha || params.reset || '').trim();
+  var token = String(params.token || '').trim();
+  var validacao = AUT_VALIDAR_RESET_SENHA_V15_(resetId, token);
+  var dados = { resetId: resetId, token: token, valido: validacao.ok, msg: validacao.ok ? 'Informe uma nova senha forte.' : validacao.msg };
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Recuperar senha - AUTENTIKO-OK CHECK</title><style>body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f7fb;color:#0f172a;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{width:100%;max-width:430px;background:#fff;border:1px solid #d9e3f0;border-radius:16px;box-shadow:0 20px 40px rgba(15,23,42,.12);padding:30px}.brand{text-align:center;margin-bottom:18px}.brand h1{font-size:22px;margin:0;color:#1d4ed8}.brand p{font-size:13px;color:#64748b;margin:6px 0 0}.input{margin-bottom:14px}.input label{display:block;font-size:11px;text-transform:uppercase;font-weight:700;color:#64748b;margin-bottom:6px}.input input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px;padding:12px;font-size:14px}.btn{width:100%;border:0;background:#2563eb;color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer}.btn:disabled{opacity:.65}.msg{font-size:13px;border-radius:10px;padding:12px;background:#eff6ff;color:#1e3a8a;margin-bottom:14px}.err{background:#fee2e2;color:#991b1b}.ok{background:#dcfce7;color:#166534}.small{font-size:12px;color:#64748b;margin-top:12px;line-height:1.4}</style></head><body><main class="card"><div class="brand"><h1>AUTENTIKO-OK CHECK</h1><p>Recuperação segura de senha</p></div><div id="msg" class="msg' + (dados.valido ? '' : ' err') + '">' + AUT_ESCAPE_HTML_V7_(dados.msg) + '</div>' + (dados.valido ? '<div class="input"><label>Nova senha forte</label><input type="password" id="senha" placeholder="8+ caracteres, letras, número e símbolo"></div><div class="input"><label>Confirmar nova senha</label><input type="password" id="senha2"></div><button class="btn" id="btn" onclick="confirmar()">Redefinir senha</button><p class="small">A senha será enviada ao servidor somente em hash SHA-256. O link expira e tem uso único.</p>' : '<p class="small">Volte à tela de login e solicite um novo link de recuperação.</p>') + '</main><script>var RESET=' + AUT_JSON_SCRIPT_V15_(dados) + ';function forte(s){return s.length>=8&&/[a-z]/.test(s)&&/[A-Z]/.test(s)&&/\\d/.test(s)&&/[^A-Za-z0-9]/.test(s)}async function hash(s){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}function setMsg(t,c){var m=document.getElementById("msg");m.textContent=t;m.className="msg "+(c||"")}async function confirmar(){var s=document.getElementById("senha").value;var s2=document.getElementById("senha2").value;if(!forte(s)){setMsg("Use senha forte: 8+ caracteres com maiúscula, minúscula, número e símbolo.","err");return}if(s!==s2){setMsg("As senhas não conferem.","err");return}var btn=document.getElementById("btn");btn.disabled=true;btn.textContent="Redefinindo...";google.script.run.withSuccessHandler(function(r){setMsg(r&&r.msg?r.msg:"Processado.",r&&r.sucesso?"ok":"err");btn.disabled=false;btn.textContent="Redefinir senha";if(r&&r.sucesso)setTimeout(function(){location.href="' + AUT_ESCAPE_HTML_V7_(AUT_WEBAPP_URL_PUBLICA_V7) + '"},1800)}).withFailureHandler(function(e){setMsg("Erro: "+(e&&e.message?e.message:e),"err");btn.disabled=false;btn.textContent="Redefinir senha"}).apiConfirmarRecuperacaoSenha(RESET.resetId,RESET.token,await hash(s))}</script></body></html>';
+  return HtmlService.createHtmlOutput(html)
+    .setTitle('Recuperar senha - AUTENTIKO-OK CHECK')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1');
 }
 
 function AUT_LOCALIZAR_MANIFESTO_V7_(ss, id) {

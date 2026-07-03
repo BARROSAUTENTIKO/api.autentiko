@@ -201,7 +201,16 @@ input[type="number"]::placeholder,
       <div class="input-group"><label>Usuário</label><input type="text" id="log-user" placeholder="Ex: admin"></div>
       <div class="input-group"><label>Senha</label><input type="password" id="log-pass" placeholder="••••••••"></div>
       <button class="btn" id="btn-login" onclick="fazerLogin()">Acessar Sistema</button>
+      <button class="btn-link" onclick="abrirRecuperacaoSenha()">Recuperar senha por e-mail</button>
       <button class="btn-link" onclick="trocarFormulario('view-registro')">Meu primeiro acesso (Criar conta)</button>
+    </div>
+
+    <div id="view-recuperar-senha" class="card-login" style="display: none;">
+      <h2 style="text-align:center; font-size:22px; margin-bottom:10px;">Recuperar Senha</h2>
+      <p style="text-align:center; color:var(--text-muted); font-size:13px; margin-bottom:20px;">Informe seu usuário ou e-mail cadastrado. Enviaremos um link seguro com validade de 1 hora.</p>
+      <div class="input-group"><label>Usuário ou e-mail</label><input type="text" id="rec-identificador" placeholder="usuario@exemplo.com ou usuário"></div>
+      <button class="btn" id="btn-recuperar" onclick="solicitarRecuperacaoSenha()">Enviar link de recuperação</button>
+      <button class="btn-link" onclick="trocarFormulario('view-login')">← Voltar ao login</button>
     </div>
 
     <div id="view-registro" class="card-login" style="display: none;">
@@ -1690,7 +1699,14 @@ input[type="number"]::placeholder,
       if(btn) btn.classList.add('active');
       document.getElementById('titulo-pagina').innerText = titulo;
     }
-    function trocarFormulario(id) { document.getElementById('view-login').style.display = 'none'; document.getElementById('view-registro').style.display = 'none'; document.getElementById(id).style.display = 'block'; }
+    function trocarFormulario(id) {
+      ['view-login', 'view-registro', 'view-recuperar-senha'].forEach(function(viewId) {
+        var el = document.getElementById(viewId);
+        if (el) el.style.display = 'none';
+      });
+      var alvo = document.getElementById(id);
+      if (alvo) alvo.style.display = 'block';
+    }
     function sairSistema() { usuarioAtual = null; document.getElementById('route-dashboard').classList.remove('active'); document.getElementById('route-auth').classList.add('active'); document.getElementById('log-user').value = ''; document.getElementById('log-pass').value = ''; }
     
     function tentarAbrirConfiguracoes(btn) {
@@ -1839,6 +1855,37 @@ input[type="number"]::placeholder,
         } else { mostrarToast(res.msg, "var(--danger)"); }
         btn.disabled = false; btn.innerText = "Acessar Sistema";
       }).validarLogin(u, hash);
+    }
+
+    function abrirRecuperacaoSenha() {
+      var usuario = document.getElementById('log-user');
+      var rec = document.getElementById('rec-identificador');
+      if (usuario && rec && usuario.value) rec.value = usuario.value.trim();
+      trocarFormulario('view-recuperar-senha');
+    }
+
+    function solicitarRecuperacaoSenha() {
+      var ident = document.getElementById('rec-identificador').value.trim();
+      if (!ident) {
+        mostrarToast('Informe seu usuário ou e-mail cadastrado.', 'var(--warning)');
+        return;
+      }
+      var btn = document.getElementById('btn-recuperar');
+      btn.disabled = true;
+      btn.innerText = 'Enviando link...';
+      google.script.run
+        .withSuccessHandler(function(res) {
+          mostrarToast((res && res.msg) ? res.msg : 'Se o cadastro existir, enviaremos o link.', (res && res.sucesso) ? 'var(--success)' : 'var(--warning)');
+          btn.disabled = false;
+          btn.innerText = 'Enviar link de recuperação';
+          if (res && res.sucesso) trocarFormulario('view-login');
+        })
+        .withFailureHandler(function(err) {
+          mostrarToast('Erro ao solicitar recuperação: ' + (err && err.message ? err.message : err), 'var(--danger)');
+          btn.disabled = false;
+          btn.innerText = 'Enviar link de recuperação';
+        })
+        .apiSolicitarRecuperacaoSenha(ident);
     }
 
     /* PATCH V6 — upload rápido, cache de emissão e fotos sem corte */
@@ -2097,6 +2144,8 @@ input[type="number"]::placeholder,
     }
 
     window.fazerLogin = fazerLogin;
+    window.abrirRecuperacaoSenha = abrirRecuperacaoSenha;
+    window.solicitarRecuperacaoSenha = solicitarRecuperacaoSenha;
     window.trocarFormulario = trocarFormulario;
     window.finalizarCadastro = finalizarCadastro;
     window.salvarRascunhoVistoria = salvarRascunhoVistoria;

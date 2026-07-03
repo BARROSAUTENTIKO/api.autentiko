@@ -100,3 +100,12 @@
 - Conferir que a legenda técnica aparece uma única vez por ambiente.
 - Conferir que observações e anamnese aparecem consolidadas por ambiente.
 - Conferir que a anamnese usa passado constatativo, por exemplo `verificou-se` ou `constatou-se`.
+
+## 14. Recuperação de senha @55
+- Na tela de login, clicar em `Recuperar senha por e-mail`.
+- Informar usuário ou e-mail cadastrado e confirmar envio do link.
+- Confirmar que o e-mail recebido abre a página de redefinição.
+- Testar senha fraca: deve ser recusada no navegador.
+- Testar senha forte e confirmação igual: deve atualizar a senha e invalidar o link.
+- Tentar reutilizar o mesmo link: deve aparecer como usado/não localizado.
+- Conferir `AUDITORIA` com solicitação e confirmação da recuperação.

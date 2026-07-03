@@ -3,7 +3,7 @@
   "project": "AUTENTIKO OK CHECK / Palmer Imóveis - Vistorias",
   "apps_script_project_id": "1PKMceWaR3WAh-hbPFb66pDrSNpLiquBoaRo5tnSUepDgn5bIn36imgp8",
   "apps_script_deployment_id": "AKfycbwL173NCw8THyvkJ2cp-HalyjLLV2wYUn664ahNJTlcwNPRO7st7HmMQlLTbgCXVTme",
-  "published_version": 52,
+  "published_version": 55,
   "files": [
     "CHECKLIST_TESTES.md",
     "Code.gs",
@@ -20,9 +20,9 @@
   ],
   "source_sizes_bytes": {
     "Code.gs": 166888,
-    "Index.html": 132615,
+    "Index.html": 135086,
     "Sign.html": 46077,
-    "ZZZ_V6_Final.gs": 87130,
+    "ZZZ_V6_Final.gs": 99704,
     "ZZZ_Z_AUTENTIKO_SIGN.gs": 47531,
     "modelo.html": 51627
   },
@@ -57,5 +57,18 @@
     "pdf_before_render_sync": true,
     "gallery_caption_model": "grade por ambiente com codigo por foto e legenda tecnica unica por ambiente",
     "anamnese_tense": "constatacao no passado: verificou-se, constatou-se, registrou-se"
+  },
+  "password_recovery": {
+    "version": 55,
+    "button_location": "login",
+    "token_expiration_minutes": 60,
+    "token_storage": "PropertiesService with SHA-256 token hash",
+    "password_storage": "SHA-256 only",
+    "single_use_link": true,
+    "audit_events": [
+      "SOLICITAR_RECUPERACAO_SENHA",
+      "RECUPERACAO_SENHA_TOKEN_INVALIDO",
+      "CONFIRMAR_RECUPERACAO_SENHA"
+    ]
   }
 }
